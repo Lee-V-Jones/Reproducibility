@@ -1,0 +1,4028 @@
+---
+title: "Paper 8: Linking childhood emotional abuse and depressive symptoms: The role of emotion dysregulation and interpersonal problems"
+author: Lee Jones \- Senior Biostatistician \- Statistical Review
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+
+filters:
+  - minus_html.lua
+
+format:
+  html:
+    smart: false
+    embed-resources: true
+    theme: journal
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message = FALSE)
+
+```
+
+```{css}
+a { color: blue !important;}
+h1 {font-size: 22px !important;}
+```
+
+```{r, results='hide'}
+lapply(c("figures", "data"), function(d) if (!dir.exists(d)) dir.create(d, recursive = TRUE))
+```
+
+```{r}
+normalQ<- "QQ-plot looks roughly normal."
+notnormalQ<- "QQ-plot indicates the residuals are not normally distributed."
+vifprob<-"Overall, when taking into account VIF and SE, the model has collinearity problems."
+vifnoprob<-"Overall, when taking into account VIF and SE, the model does not have collinearity issues."
+indDesNo<-"The study design is not independent and should be assessed using linear mixed models or generalized estimating equations."
+indDesYes<-"The study design seems to be independent."
+homYes<-"There is no distinct funnelling pattern observed, supporting homoscedasticity of residuals."
+homNo<-"The residuals vs. fitted plot is heteroscedastic with funnelling shape."
+somehet<-"Some heteroscedasticity is present in plots, and a sensitivity analysis using weighted or robust regression or wild bootstrapping is recommended."
+Cooksnoproblem<-"Cook's Distance and other influence diagnostics indicated no observations of concern."
+linyes<-"No linearity violation was observed in either plots or tests."
+linno<-"Plots and tests show an unaccounted non-linear relationship may be present."
+linplotno<-"Plots show an unaccounted non-linear relationship may be present."
+lintestno<-"Tests show an unaccounted non-linear relationship may be present."
+linout<-"Linearity issues are likely due to outliers within the data."
+p_repro<-"The p-values in this model were reproduced with mean differences for p-values close to zero."
+OutliersYes <-"Outliers present with high Cook's distance values indicating a sensitivity analysis should be performed to assess the change in the regression coefficients."
+MostCompRep<- "This model was mostly computationally reproducible, with minor rounding errors. P-values were reproduced and had the same interpretation, and regression coefficients did not change direction."
+CompRep<-"This model was computationally reproducible, with all reported statistics that were assessed being reproducible."
+NotCompRep<-"This model was not computationally reproducible."
+ Nosens<-"As this model was not computationally reproducible, inferential reproducibility was not considered, since the original analyses could not be reproduced and therefore, statistical assumptions could not be meaningfully compared or interpreted."
+
+evalAump<-"Evaluate the assumptions of the linear regression models by examining residuals, identifying influential outliers, and assessing multicollinearity among predictors. If any assumptions are violated, address them using appropriate methods."
+use_VIF<-"Formally assess multicollinearity using variance inflation factors (VIFs) and examination of coefficient standard errors."
+uniqueID <- "Include a unique person identifier (ID) in the dataset to ensure each individual can be distinctly identified."
+Scat<-"Consider using Scatterplots to visualise the relationships between variables."
+Box<-"Consider using box-plots to visualise the data."
+AdjR2<- "Adjusted R^2^ should be reported for multivariable models."
+datD<- "Include a data dictionary."
+Includedata<- "Include data to reproduce all analyses in the paper and supplementary files."
+Fullydescribe<- "Fully describe the model used in the linear regression."
+DetailAssump<-"Provide details of linear regression assumption checks."
+Code<- "Consider creating a reproducible analysis workflow and sharing the code."
+Update_dataAvail<-"Update the data availability statement to reflect the status of the data."
+coef95<-"Report linear regression coefficients and 95% confidence intervals."
+Analysis<-"Provide tables in the Supporting Information that present all analyses conducted in the paper, including full model outputs such as regression coefficients and all variables used for adjustment."
+Missing<-"Provide a clear description of the amount and pattern of missing data, along with the methods used to address missingness in the analyses."
+Modelling<-"Ensure that the modelling process is clearly described and applied consistently throughout the paper. The type of model and its key specifications should be included in the footnotes of the tables to improve transparency."
+File_format<- "Data underlying statistical analyses should be provided in a standard data format (e.g., CSV, XLSX, or similar) so it is machine readable."
+Data_format<-"Provide the data in a recognised long or wide format, with a unique participant identifier included to allow assessment of repeated measures and clustering."
+Program<-"Specify the statistical software package, version, and any relevant options, procedures, or settings required to reproduce the analysis."
+Stepwise<-"Ensure complete reporting of the stepwise model selection procedure, including the direction of selection (forward, backward, or bidirectional) and the criteria for variable entry and removal."
+Multiple_test<-"Acknowledge the issue of multiple testing in the results and/or limitations section, including whether adjustments were applied or why none were considered necessary."
+Effect_size<-"Place greater emphasis on the magnitude and practical relevance of regression coefficients, including their confidence intervals, rather than focusing predominantly on statistical significance."
+
+```
+
+# References
+
+Christ C, de Waal MM, Dekker JJM, van Kuijk I, van Schaik DJF, Kikkert MJ, et al. (2019) Linking childhood emotional abuse and depressive symptoms: The role of emotion dysregulation and interpersonal problems. PLoS ONE 14(2): e0211882. <https://doi.org/10.1371/journal.pone.0211882>
+
+de Waal, Marleen (2019). Linking childhood emotional abuse and depressive symptoms. figshare. Dataset. <https://doi.org/10.6084/m9.figshare.7636511.v3>
+
+# Disclosure
+
+This reproducibility project was conducted to the best of our ability, with careful attention to statistical methods and assumptions. The research team comprises four senior biostatisticians (three of whom are accredited), with 20 to 30 years of experience in statistical modelling and analysis of healthcare data. While statistical assumptions play a crucial role in analysis, their evaluation is inherently subjective, and contextual knowledge can influence judgements about the importance of assumption violations. Differences in interpretation may arise among statisticians and researchers, leading to reasonable disagreements about methodological choices.
+
+Our approach aimed to reproduce published analyses as faithfully as possible, using the details provided in the original papers. We acknowledge that other statisticians may have differing success in reproducing results due to variations in data handling and implicit methodological choices not fully described in publications. However, we maintain that research articles should contain sufficient detail for any qualified statistician to reproduce the analyses independently.
+
+# Methods used in our reproducibility analyses
+
+There were two parts to our study. First, 100 articles published in *PLOS ONE* were randomly selected from the health domain and sent for post-publication peer review by statisticians. Of these, 95 included linear regression analyses and were therefore assessed for reporting quality. The statisticians evaluated what was reported, including regression coefficients, 95% confidence intervals, and p-values, as well as whether model assumptions were described and how those assumptions were evaluated. This report provides a brief summary of the initial statistical review.
+
+The second part of the study involved reproducing linear regression analyses for papers with available data to assess both computational and inferential reproducibility. All papers were initially assessed for data availability, and the statistical software used. From those with accessible data, the first 20 papers (from the original random sample) were evaluated for computational reproducibility. Within each paper, individual linear regression models were identified and assigned a unique number. A maximum of three models per paper were selected for assessment. When more than three models were reported, priority was given to the final model or the primary models of interest as identified by the authors; any remaining models were selected at random.
+
+To assess computational reproducibility, differences between the original and reproduced results were evaluated using absolute discrepancies and rounding error thresholds, tailored to the number of decimal places reported in each paper. Results for each reported statistic, e.g., regression coefficient, were categorised as *Reproduced*, *Incorrect Rounding*, or *Not Reproduced*, depending on how closely they matched the original values. Each paper was then classified as *Reproduced*, *Mostly Reproduced*, *Partially Reproduced*, or *Not Reproduced*. The mostly reproduced category included cases with minor rounding or typographical errors, whereas partially reproduced indicated substantial errors were observed, but some results were reproduced.
+
+For models deemed at least partially computationally reproducible, inferential reproducibility was further assessed by examining whether statistical assumptions were met and by conducting sensitivity analyses, including bootstrapping where appropriate. We examined changes in standardized regression coefficients, which reflect the change in the outcome (in standard deviation units) for a one standard deviation increase in the predictor. Meaningful differences were defined as a relative change of 10% or more, or absolute differences of 0.1 (moderate) and 0.2 (substantial). When non-linear relationships were identified, inferential reproducibility was assessed by comparing model fit measures, including R², Akaike Information Criterion (AIC), and Bayesian Information Criterion (BIC). When the Gaussian distribution was not appropriate for the dependent variable, alternative distributions were considered, and model fit was evaluated using AIC and BIC.
+
+Results from the reproduction of the Christ et al. (2019) paper are presented below. An overall summary of results is presented first, followed by model-specific results organised within tab panels. Within each panel, the *Original results* tab displays the linear regression outputs extracted from the published paper. The *Reproduced results* tab presents estimates derived from the authors' shared data, along with a comprehensive assessment of linear regression assumptions. The *Differences* tab compares the original and reproduced models to assess computational reproducibility. Finally, the *Sensitivity analysis* tab evaluates inferential reproducibility by examining whether identified assumption violations meaningfully affected the results.
+
+# Summary from statistical review
+
+This study examines if childhood emotional abuse (CEA), physical abuse (CPA), and sexual abuse (CSA) were independently associated with depressive symptoms, emotion dysregulation, and interpersonal problems. The paper was clear and easy to read. The authors checked the assumptions of the linear regression but did not provide details. The authors discussed independent variables in terms of significant associations rather than interpreting the effect sizes.
+
+# Data availability and software used
+
+The authors provided data in a well-structured Excel (wide) file, but no accompanying data dictionary. The dataset was hosted on Figshare, consistent with the data availability statement reported in the paper. SPSS was used for analyses of linear regression models.
+
+# Regression sample
+
+This paper reports at least 16 linear regressions (excluding the mediation models), including both univariate and multivariable analyses. Multivariable modelling was performed for three main outcomes: depressive symptoms, emotional dysregulation, and interpersonal problems. There were three outcomes clearly identified as the primary focus, hence we did not need to select three models for our reproducibility exercise.
+
+# Computational reproducibility results
+
+The models assessed in this paper were mostly computationally reproducible, with minor errors identified. Some estimates had incorrect rounding, and in the emotional dysregulation model, the variable *childhood sexual abuse* (CSA) had a lower 95% confidence interval that was missing a negative sign. The authors reported R^2^ rather than adjusted R^2^.
+
+# Inferential reproducibility results
+
+The three models assessed in this paper were inferentially reproducible. The main modelling issue was the skewed distribution of the independent variables, with most participants reporting minimum scores and sparse data at the upper ends of the scales. Mild assumption violations were observed in the residuals. Upon reproducing the models, residual plots for all three models indicated mild heteroscedasticity, and model 1 also showed mild non-normality. The third model exhibited potential issues with linearity and outliers. After refitting this model to include quadratic and cubic terms, the quadratic terms were statistically significant. However, these differences did not translate into a substantially improved model fit according to AIC, BIC, or adjusted R², and were likely attributable to sparse data at the upper end of the predictor scales. All three models were bootstrapped and produced results consistent with the reproduced models, with differences in standardized regression coefficients less than 0.1. The direction and statistical significance of the regression coefficients remained consistent across both the reproduced and bootstrapped models.
+
+# Recommended changes
+
+-   Correct the typo in the 95% CI for CSA in the emotional dysregulation model.
+-   `r Scat`
+-   `r AdjR2`
+-   `r datD`
+-   `r DetailAssump`
+-   Consider the linearity of relationships.
+
+```{r}
+repdat <- data.frame(
+  paper_ID = as.numeric(8),
+  Title = as.character("Linking childhood emotional abuse and depressive symptoms: The role of emotion dysregulation and interpersonal problems"),
+  Summary = as.character("This study examines if childhood emotional abuse (CEA), physical abuse (CPA), and sexual abuse (CSA) were independently associated with depressive symptoms, emotion dysregulation, and interpersonal problems. The paper was clear and easy to read. The authors checked the assumptions of the linear regression but did not provide details. The authors discussed independent variables in terms of significant associations rather than interpreting effect sizes."),
+ Regression_sample = as.character("This paper reports at least 16 linear regressions (excluding the mediation models), including both univariate and multivariable analyses. Multivariable modelling was performed for three main outcomes: depressive symptoms, emotional dysregulation, and interpersonal problems. For reproducibility, the randomisation of regression models was not required, as the authors clearly identified these three outcomes as the primary focus."),
+  Data_comments = as.character("The authors provided data in a well-structured Excel (wide) file without an accompanying data dictionary. The dataset was hosted on Figshare, consistent with the data availability statement reported in the paper."),
+  Data_Availability_Statement = as.character("Data are deposited publicly in Figshare and are accessible via https://doi.org/10.6084/m9.figshare.7636511.v3."),
+  DAS_correct = as.character("Yes"),
+  Data_Notionally_Available = as.character("Yes"),
+  Ethics_required_access_data = as.character("NA"),
+  Permission_required_access_data = as.character("NA"),
+  Data_Available = as.character("Yes"),
+  Anyrawdata = as.character ("Yes"),
+  HaveSupInfo = as.character ("No"),
+  Data_location = as.character("Figshare"),
+  Accessible_data_badge  = as.character("No"),
+  Data_Reason_not_found  = as.character("NA"),
+  Data_Dictionary = as.character("No"),
+  Format_file = as.character("Excel"),
+  Format_data  = as.character("Wide"),
+  Package = as.character("SPSS"),
+  Recommended_changes = as.character("Correct the typo in the 95% CI for CSA in the emotional dysregulation model. Consider using Scatterplots to visualise the relationships between variables. Adjusted R-squared should be reported for multivariable models. Include a data dictionary. Provide details of linear regression assumption checks. Consider the linearity of relationships."),
+  Reproduced = as.character("Yes"),
+  Rep_comment = as.character("While the authors did not provide a data dictionary, only a small number of variables were provided which were consistent with variables names described in the paper."),
+  Rating = as.numeric(3),
+  Unclear_N = as.character("No"),
+  Difficult_matching_variables = as.character ("No"),
+  Rounding = as.character ("Yes"),
+  Unclear_model = as.character ("No"),
+  Typo = as.character ("Yes"),
+  Data_Cleaning_required = as.character ("No"),
+  Data_Reformatting_required = as.character ("No"),
+  R1 = as.character("Mostly reproduced"),
+  R2 = as.character("Mostly reproduced"),
+  R3 = as.character("Mostly reproduced"),
+  E1 = as.character("Yes"),
+  E2 = as.character("Yes"),
+  E3 = as.character("Yes"),
+  E1_Dist = as.character("Gaussian"),
+  E2_Dist  = as.character("Gaussian"),
+  E3_Dist  = as.character("Gaussian"),
+  E1_Mixed = as.character("No"),
+  E2_Mixed  = as.character("No"),
+  E3_Mixed = as.character("No"),
+  E1_Linkfunction = as.character("Identity"),
+  E2_Linkfunction = as.character("Identity"),
+  E3_Linkfunction  = as.character("Identity"),
+  E1_RSE = as.character("No"),
+  E2_RSE  = as.character("No"),
+  E3_RSE  = as.character("No"),
+  E1_Nonlinear = as.character("No"),
+  E2_Nonlinear  = as.character("No"),
+  E3_Nonlinear  = as.character("No"),
+  E1_Transformation = as.character("No"),
+  E2_Transformation  = as.character("No"),
+  E3_Transformation  = as.character("No"),
+  E1_Regularisation = as.character("No"),
+  E2_Regularisation = as.character("No"),
+  E3_Regularisation  = as.character("No"),
+   E1_boot = as.character("Wild"),
+  E2_boot  = as.character("Wild"),
+  E3_boot  = as.character("Wild"),
+  Comp_reproduce = as.character("Yes"),
+  Infer_reproduce = as.character("Yes"),
+  Comp_comment = as.character("This paper was mostly computationally reproducible, with minor errors identified. Some estimates had incorrect rounding, and in the emotional dysregulation model, the variable childhood sexual abuse (CSA) had a lower 95% confidence interval that was missing a negative sign. The authors reported R-squared rather than adjusted R_squared"),
+  Infer_comment = as.character("For the models assessed in this paper were inferentially reproducible. The main modelling issue was the skewed distribution of the independent variables, with most participants reporting minimum scores and sparse data at the upper ends of the scales. Mild assumption violations were observed in the residuals. Upon reproducing the models, residual plots for all three models indicated mild heteroscedasticity, and model 1 also showed mild non-normality. The third model exhibited potential issues with linearity and outliers. After refitting this model to include quadratic and cubic terms, the cubic terms were not statistically significant, whereas the quadratic terms were. However, these differences did not translate into a substantially improved model fit according to AIC, BIC, or adjusted R², and were likely attributable to sparse data at the upper end of the predictor scales. All three models were bootstrapped and produced results consistent with the reproduced models, with differences in standardized regression coefficients less than 0.1. The direction and statistical significance of the regression coefficients remained consistent across both the reproduced and bootstrapped models."),
+  stringsAsFactors = FALSE
+)
+
+
+```
+
+```{r pack}
+library(tidyverse)
+library(emmeans)
+library(haven)#spss
+library(broom) # for regression tables
+library(summarytools) # for tables
+library (gtsummary) #for models 
+library(tables) # for tables
+library (flextable)
+library(psych)
+library(MASS)
+library (leaps)
+library(lmboot)
+library(car)
+library(jtools)
+library(lmtest)
+library(sandwich)
+library(httr)
+library(readxl)
+library(jmv)
+library(pillar)
+library(htmltools)
+library(gridExtra)
+library(blandr)
+library(rvest)
+library(effects)
+library(visreg)
+library(forestplot)
+library(conflicted)
+library(httr)
+library(forcats)
+library(olsrr)
+library(jsonlite)
+
+
+
+conflict_prefer("compose", "flextable") 
+conflict_prefer("rename", "dplyr") 
+conflict_prefer("filter", "dplyr") 
+conflict_prefer("select", "dplyr") 
+
+# capture session information in a text file
+sessionInfo() %>% capture.output(file="session_info.txt")
+
+
+
+#flextable global rounding
+set_flextable_defaults(digits = 3)
+otherRound<-3
+dig<-3
+thresround<-4
+
+options(scipen = 999)
+
+#GT summary theme
+my_theme <-
+  list(
+    # round large p-values to two places
+    "pkgwide-fn:pvalue_fun" = function(x) style_pvalue(x, digits = 3),
+    "pkgwide-fn:prependpvalue_fun" = function(x) style_pvalue(x, digits = 3, prepend_p = TRUE),
+    # report median (IQR) and n (percent) as default stats in `tbl_summary()`
+    "tbl_summary-str:continuous_stat" = "{mean} ({SD})",
+    "tbl_summary-str:categorical_stat" = "{n} ({p}%)") 
+ 
+set_gtsummary_theme(my_theme)
+
+flag_any <- function(df, term_name, condition) {
+  df |>
+    filter(term == term_name) |>
+    summarise(flag = any({{ condition }}, na.rm = TRUE)) |>
+    pull(flag)
+}
+
+
+
+Sround <- function(x, k) {
+  trimws(format(round(x, k), nsmall = k, scientific = FALSE))
+}
+
+
+
+# Function to round to 4 decimal places
+round_p <- function(x) ifelse(is.na(x), "", ifelse(x < 0.001, "<0.001", sprintf("%.4f", x)))
+
+
+# Function to print summary about VIF values
+printvif<- function(vif_values) {
+  if (all(is.na(vif_values))) {
+    print("All values are NA")
+  } else if (any(!is.na(vif_values) & vif_values >= 5)) {
+    print("Collinearity issues")
+  } else if (any(!is.na(vif_values) & vif_values < 5 & vif_values >= 3)) {
+    print("All VIF values are under five, indicating some colinearity but within reasonable bounds.")
+  } else if (any(!is.na(vif_values) & vif_values < 3)) {
+    print("All VIF values are under three, indicating no collinearity issues.")
+  }
+}
+
+# Function to generate bullet points for each variable
+generate_bullet_points <- function(data) {
+  bullet_points <- data %>%
+    rowwise() %>%
+    mutate(text = paste0("* ", term, ": ", Condition)) %>%
+    pull(text)
+  
+  return(bullet_points)
+}
+
+
+ols_plot_dfbetas_fixed_y <- function(model, print_plot = TRUE, fixed_ylim = TRUE) {
+  olsrr:::check_model(model)
+  
+  dfb <- dfbetas(model)
+  n <- nrow(dfb)
+  np <- ncol(dfb)
+  threshold <- 2 / sqrt(n)
+  myplots <- list()
+  outliers <- list()
+  
+  # Precompute y-axis range and expand upper limit if fixed_ylim is TRUE
+  if (fixed_ylim) {
+    y_range <- range(dfb, na.rm = TRUE)
+    y_range[2] <- y_range[2] + 0.05 * diff(y_range)  # Add 5% buffer at top
+  }
+
+  for (i in seq_len(np)) {
+    dbetas <- dfb[, i]
+    df_data <- data.frame(obs = seq_len(n), dbetas = dbetas)
+    d <- olsrr:::ols_prep_dfbeta_data(df_data, threshold)
+    f <- olsrr:::ols_prep_dfbeta_outliers(d)
+
+    # Determine where to place threshold label
+    if (fixed_ylim) {
+      y_text_pos <- y_range[2] - 0.01 * diff(y_range)  # Slightly below max
+    } else {
+      y_range_this <- range(d$dbetas, na.rm = TRUE)
+      y_text_pos <- y_range_this[2] + 0.05 * diff(y_range_this)
+    }
+
+    p <- ggplot(d, aes(x = obs, y = dbetas, label = txt, ymin = 0, ymax = dbetas)) +
+      geom_linerange(colour = "blue") +
+      geom_hline(yintercept = c(0, threshold, -threshold), colour = "red") +
+      geom_point(colour = "blue", shape = 1) +
+      geom_text(
+        hjust = -0.2, nudge_x = 0.15, size = 4, family = "serif",
+        fontface = "italic", colour = "darkred", na.rm = TRUE
+      ) +
+      annotate("text", x = Inf, y = y_text_pos, hjust = 1.1, vjust = 0,
+               family = "serif", fontface = "italic", colour = "darkred", size = 4,
+               label = paste("Threshold:", round(threshold, 2))) +
+      xlab("Observation") +
+      ylab("DFBETAS") +
+      ggtitle(paste("Influence Diagnostics for", colnames(dfb)[i]))
+
+    if (fixed_ylim) {
+      p <- p + ylim(y_range)
+    }
+
+    myplots[[i]] <- p
+    outliers[[i]] <- f
+  }
+
+  if (print_plot) {
+    cowplot::plot_grid(plotlist = myplots, ncol = 2)
+  } else {
+    return(list(plots = myplots, outliers = outliers))
+  }
+}
+
+
+## modiy cooks distance 
+ols_plot_cooksd_chart_custom <- function(model, type = 1, threshold = NULL, print_plot = TRUE) {
+  olsrr:::check_model(model)
+  k <- olsrr:::ols_prep_cdplot_data(model, type)
+  d <- olsrr:::ols_prep_outlier_obs(k)
+  f <- olsrr:::ols_prep_cdplot_outliers(k)
+  
+  if (is.null(threshold)) {
+    threshold <- k$ts
+  }
+
+  # Calculate upper limit and label position
+  y_max <- max(d$cd, na.rm = TRUE)
+  y_range <- range(d$cd, na.rm = TRUE)
+  y_buffer <- 0.1 * diff(y_range)
+  y_upper <- y_max + y_buffer
+  y_text_pos <- y_upper - 0.01 * diff(c(y_range[1], y_upper))
+
+  # Create plot
+  p <- ggplot(d, aes(x = obs, y = cd, label = txt, ymin = min(cd), ymax = cd)) +
+    geom_linerange(colour = "blue") +
+    geom_point(shape = 1, colour = "blue") +
+    geom_text(
+      vjust = -1, size = 4, family = "serif", fontface = "italic",
+      colour = "darkred", na.rm = TRUE
+    ) +
+    geom_hline(yintercept = threshold, colour = "red") +
+    geom_hline(yintercept = 0.5, linetype = "dotted", colour = "red") +  # add 0.5 line
+    annotate("text", x = Inf, y = y_text_pos, hjust = 1.1, vjust = 0,
+             family = "serif", fontface = "italic", colour = "darkred", size = 4.5,
+             label = paste("Threshold:", round(threshold, 3))) +
+    ylim(0, y_upper) +
+    xlab("Observation") +
+    ylab("Cook's D") +
+    ggtitle("Cook's Distance Plot")
+
+  if (print_plot) {
+    suppressWarnings(print(p))
+  } else {
+    return(list(plot = p, outliers = f, threshold = threshold))
+  }
+}
+
+
+# modify DFFIT
+ols_plot_dffits_custom <- function(model, size_adj_threshold = TRUE, print_plot = TRUE) {
+  olsrr:::check_model(model)
+  data <- olsrr:::ols_prep_dffits_plot_data(model, size_adj_threshold)
+
+  d <- data$d
+  threshold <- data$dft
+  title <- data$title
+
+  # Determine y-axis range with buffer
+  y_max <- max(d$dbetas, na.rm = TRUE)
+  y_min <- min(d$dbetas, na.rm = TRUE)
+  buffer <- 0.1 * max(abs(c(y_max, y_min, threshold)))
+  y_upper <- max(y_max, threshold) + buffer
+  y_lower <- min(y_min, -threshold) - buffer
+
+  # Position the threshold label just inside the top
+  y_text_pos <- y_upper - 0.01 * (y_upper - y_lower)
+
+  p <- ggplot(d, aes(x = obs, y = dbetas, label = txt, ymin = 0, ymax = data$dfm)) +
+    geom_linerange(colour = "blue") +
+    geom_hline(yintercept = c(0, threshold, -threshold), colour = "red") +
+    geom_point(colour = "blue", shape = 1) +
+    geom_text(
+      hjust = -0.2, nudge_x = 0.15, size = 4.2,  # <- increased size
+      family = "serif", fontface = "italic", colour = "darkred", na.rm = TRUE
+    ) +
+    annotate(
+      "text", x = Inf, y = y_text_pos, hjust = 1.1, vjust = 0,
+      family = "serif", fontface = "italic", colour = "darkred", size = 4.5,
+      label = paste("Threshold:", round(threshold, 2))
+    ) +
+    ylim(y_lower, y_upper) +
+    xlab("Observation") +
+    ylab("DFFITS") +
+    ggtitle(paste("DFFIT Plot"))
+
+  if (print_plot) {
+    suppressWarnings(print(p))
+  } else {
+    return(list(plot = p, outliers = data$f, threshold = round(threshold, 2)))
+  }
+}
+
+plot_covratio <- function(model) {
+  inf <- influence.measures(model)$infmat
+  covr <- unname(inf[, "cov.r"])
+  n    <- nobs(model)
+  p    <- length(coef(model))  # includes intercept
+  thr  <- 3 * p / n
+  df   <- data.frame(obs = seq_along(covr), covr = covr)
+  
+  op <- par(mfrow = c(1,1))
+  on.exit(par(op))
+  plot(df$obs, df$covr, pch = 19, xlab = "Observation",
+       ylab = "COVRATIO (cov.r)",
+       main = "Influence on coefficient covariance (COVRATIO)")
+  abline(h = 1, lty = 2)
+  abline(h = 1 + thr, lty = 3)
+  abline(h = 1 - thr, lty = 3)
+  labs <- which(covr > 1 + thr | covr < 1 - thr)
+  if (length(labs)) text(labs, covr[labs], labels = labs, pos = 3, cex = 0.8)
+}
+
+
+
+```
+
+```{r, results='hide'}
+
+figshare_id <- "7636511"
+
+# 1) Article metadata
+api_url <- paste0("https://api.figshare.com/v2/articles/", figshare_id)
+res <- GET(api_url)
+stop_for_status(res)
+
+article_info <- fromJSON(content(res, as = "text", encoding = "UTF-8"))
+
+# 2) File list
+file_info <- article_info$files
+print(file_info$name)
+
+# 3) Pick the exact file you want (safer than [1])
+target_name <- "Data_Predex.xlsx"
+i <- which(file_info$name == target_name)
+if (length(i) != 1) stop("Could not uniquely identify the file: ", target_name)
+
+download_url <- file_info$download_url[i]
+
+# 4) Download to a temp file
+temp_file <- tempfile(fileext = ".xlsx")
+
+dl_res <- GET(
+  download_url,
+  write_disk(temp_file, overwrite = TRUE),
+  timeout(120)
+)
+stop_for_status(dl_res)
+
+# Sanity check that a file now exists and is non-empty
+if (!file.exists(temp_file) || file.info(temp_file)$size == 0) {
+  stop("Download did not create a valid file at: ", temp_file)
+}
+
+# 5) Read the Excel file
+data <- read_excel(temp_file)
+
+
+dat<-data %>% mutate(CEA=CTQ_CEA, CPA=CTQ_CPA, CSA=CTQ_CSA)
+namey1<-"depressive symptoms"
+namey2<-"emotion dysregulation"
+namey3<-"interpersonal problems"
+
+m1y <- "QIDS_SR"
+m1x1 <- "CEA"
+m1x2 <- "CPA"
+m1x3 <- "CSA"
+
+
+m2y <- "DERS"
+m2x1 <- "CEA"
+m2x2 <- "CPA"
+m2x3 <- "CSA"
+
+
+m3y <- "IIP32_Total" 
+m3x1 <- "CEA"
+m3x2 <- "CPA"
+m3x3 <- "CSA"
+
+
+predictors1 <- c("CEA", "CPA", "CSA")
+con1 <- c("CEA", "CPA", "CSA")
+factor_vars1 <- character(0)  # No factor variables
+ref_levels1 <- character(0)  # No reference levels
+
+
+predictors2 <- c("CEA", "CPA", "CSA")
+con2 <- c("CEA", "CPA", "CSA")
+factor_vars2 <- character(0)  # No factor variables
+ref_levels2 <- character(0)  # No reference levels
+
+
+predictors3 <- c("CEA", "CPA", "CSA")
+con3 <- c("CEA", "CPA", "CSA")
+factor_vars3 <- character(0)  # No factor variables
+ref_levels3 <- character(0)  # No reference levels
+
+# Construct the formula dynamically
+formula_str1 <- sprintf("%s ~ %s + %s + %s", m1y, m1x1, m1x2, m1x3)
+model_formula1 <- as.formula(formula_str1)
+
+
+formula_str2 <- sprintf("%s ~ %s + %s + %s", m2y, m2x1, m2x2, m2x3)
+model_formula2 <- as.formula(formula_str2)
+
+
+formula_str3 <- sprintf("%s ~ %s + %s + %s", m3y, m3x1, m3x2, m3x3)
+model_formula3 <- as.formula(formula_str3)
+
+paper_ID<-8
+num_models<-3
+```
+
+```{r}
+
+# randomly selecting linear regressions
+#not chosen randomly as there were three main outcome variables
+
+```
+
+```{r, results='hide', fig.show='hide'}
+# Automatically generate model names
+model_names <- paste0("Model ", seq_len(num_models))
+
+# Automatically gather model formulas
+model_formulas <- mget(paste0("model_formula", seq_len(num_models)))
+
+# Automatically gather predictors
+predictor_sets <- mget(paste0("predictors", seq_len(num_models)))
+
+# Automatically gather dependent variables
+dependent_vars <- mget(paste0("m", seq_len(num_models), "y"))
+
+# Automatically gather custom y-axis names
+custom_y_names <- mget(paste0("namey", seq_len(num_models)))
+
+# Automatically gather continuous variable lists
+continuous_vars_list <- mget(paste0("con", seq_len(num_models)))
+
+# Automatically gather factor variable lists
+factor_vars_list <- mget(paste0("factor_vars", seq_len(num_models)))
+
+# Automatically gather reference levels lists
+ref_levels_list <- mget(paste0("ref_levels", seq_len(num_models)))
+
+
+# Ensure that ref_levels_list has the same length as model_formulas
+while (length(ref_levels_list) < length(model_formulas)) {
+  ref_levels_list <- c(ref_levels_list, list(character(0)))  # Add empty lists to match the number of models
+}
+
+# Function to dynamically assign data frames to the global environment
+assign_df <- function(name, df) {
+  assign(name, df, envir = .GlobalEnv)
+}
+
+
+# Function to generate visreg plots
+generate_visreg_plots <- function(model, predictors, dependent_var, custom_y_name, i) {
+  plot_list <- list()
+  model_coeffs <- names(coef(model))  # Get the names of the coefficients in the model
+  
+  # Dynamically calculate global y-limits for the entire model
+  visreg_outputs <- lapply(predictors, function(predictor) visreg(model, predictor, plot = FALSE))
+  y_limits <- range(unlist(lapply(visreg_outputs, function(x) c(x$res$visregRes, x$res$visregFit))), na.rm = TRUE)
+  
+  for (j in seq_along(predictors)) {
+    predictor <- predictors[j]
+    
+    # Check if the predictor or its factor levels are in the model
+    predictor_in_model <- any(grepl(predictor, model_coeffs))
+    
+    if (predictor_in_model) {
+      visreg_output <- visreg(model, predictor, gg = TRUE, overlay = TRUE, points = list(size = 4, col = "black")) +
+        theme_bw() +
+        theme(
+          axis.title = element_text(size = 24),  # Increase axis title size
+          axis.text = element_text(size = 24),   # Increase axis text size
+          plot.title = element_text(size = 16),  # Increase plot title size
+          legend.text = element_text(size = 16)  # Increase legend text size
+        ) +
+        ylim(y_limits) +  # Apply global y-limits
+        ylab(custom_y_name)  # Set the y-axis label to the custom name
+      
+      # Save each visreg plot individually
+      ggsave(paste0("figures/visreg_plot_", i, "_", predictor, ".png"), 
+             plot = visreg_output, width = 8, height = 8, dpi = 300)
+      
+      plot_list[[j]] <- visreg_output
+    }
+  }
+  return(plot_list)
+}
+
+# Corrected loop to fit the model and generate plots
+for (i in seq_along(model_formulas)) {
+  model_formula <- model_formulas[[i]]
+  model_name <- model_names[[i]]
+  predictors <- predictor_sets[[i]]
+  dependent_var <- dependent_vars[[i]]
+  custom_y_name <- custom_y_names[[i]]
+  continuous_vars <- continuous_vars_list[[i]]
+  factor_vars <- factor_vars_list[[i]]
+  
+  # Check if ref_levels_list has an entry for the current model
+  if (i > length(ref_levels_list)) {
+    cat("Warning: Index", i, "is out of bounds for ref_levels_list, which has length", length(ref_levels_list), "\n")
+    next  # Skip to the next iteration if the index is out of bounds
+  }
+  
+  ref_levels <- ref_levels_list[[i]]
+  
+  # Ensure that ref_levels are single values
+  validated_ref_levels <- list()
+  for (j in seq_along(factor_vars)) {
+    if (length(ref_levels[j]) == 1) {
+      validated_ref_levels[[j]] <- list(var = factor_vars[j], ref = ref_levels[j])
+    } else {
+      warning(paste("Skipping reference level for", factor_vars[j], "as it is not a single value."))
+    }
+  }
+  
+  # Fit the linear model
+  model <- lm(model_formula, data = dat)
+  
+  
+  
+  # Create the arguments list dynamically for linReg
+  linReg_args <- list(
+    data = dat,
+    dep = dependent_var,
+    covs = continuous_vars,  # Use only continuous predictors here
+    blocks = list(predictors),  # Include both continuous and categorical predictors in blocks
+    r2Adj = TRUE,
+    aic = TRUE,
+    rmse = TRUE,
+    modelTest = TRUE,
+    anova = TRUE,
+    ci = TRUE,
+    stdEst = TRUE,
+    ciStdEst = TRUE,
+    norm = TRUE,
+    qqPlot = TRUE,
+    resPlots = TRUE,
+    durbin = TRUE,
+    collin = TRUE,
+    cooks = TRUE
+  )
+  
+ # Add factors and reference levels if present
+if (length(factor_vars) > 0) {
+  linReg_args$factors <- factor_vars
+  if (length(validated_ref_levels) > 0) {
+    linReg_args$refLevels <- validated_ref_levels
+  }
+}
+
+# 1. Dummy-coded coefficients (reference group coding)
+linReg_args_dummy <- linReg_args
+linReg_args_dummy$intercept <- "refLevel"  # correct argument
+M <- do.call(jmv::linReg, linReg_args_dummy)
+
+# 2. ANOVA table relative to grand mean (effect coding)
+linReg_args_anova <- linReg_args
+linReg_args_anova$intercept <- "grandMean"
+M_anova <- do.call(jmv::linReg, linReg_args_anova)
+
+  
+  # Process and store coefficients
+  coefficients_df <- as.data.frame(M$models[[1]]$coef) %>%  
+    mutate(Model = i, paper_ID = paper_ID, origin = "Reproduced") %>%
+    mutate(n = 1:nrow(M$models[[1]]$coef$asDF))
+  
+  assign_df(paste0("R_coefficients_raw_df_", i), coefficients_df) 
+  
+  assign_df(paste0("R_coefficients_flextable_", i), coefficients_df %>%
+              dplyr::select(term, est, se, lower, upper, t, p) %>% 
+              mutate(p = sapply(p, round_p)) %>%
+              flextable() %>%
+              set_table_properties(layout = "autofit") %>%
+              set_header_labels(term = "Term", est = "B", se = "SE", lower = "Lower", upper = "Upper", p = "p-value") %>%
+              colformat_double(digits = dig) %>%
+              add_footer_lines("SE = Standard error; Lower = lower confidence interval; Upper = upper confidence interval."))
+  
+  # Replicate rows for fit statistics
+  fit <- M$modelFit$asDF %>% 
+    mutate(Model = i, paper_ID = paper_ID, origin = "Reproduced") %>% 
+    cbind(dplyr::select(coefficients_df, term, n)) %>% select(-model)
+  assign_df(paste0("R_fit_stats_raw_df_", i), fit)
+  
+  assign_df(paste0("R_fit_stats_flextable_", i), M$modelFit$asDF %>%
+              select(-model) %>%  
+              mutate(p = sapply(p, round_p)) %>%
+              mutate(across(c(df1, df2), ~ Sround(.x, 0))) %>%
+              flextable() %>%
+              set_header_labels(r = "R", r2 = "R2", r2Adj = "R2Adj", aic = "AIC", rmse = "RMSE", f = "F", df1 = "DF1", df2 = "DF2", p = "p-value") %>%
+              set_table_properties(layout = "autofit") %>%
+              compose(i = 1, j = "r2", part = "header", value = as_paragraph("R", as_sup("2"))) %>%
+              compose(i = 1, j = "r2Adj", part = "header", value = as_paragraph("R", as_sup("2"), "Adj")) %>%
+              colformat_double(digits = 3) %>%
+              add_footer_lines(as_paragraph(
+                as_i("R"), as_sup("2"), " Adj = Adjusted ", as_i("R"), as_sup("2"), "; ",
+                "AIC = Akaike Information Criterion; RMSE = The Root Mean Squared Error; DF1 = Degrees of freedom for the model; DF2 = Degrees of freedom for the residuals."
+              )))
+  
+  # Process and store ANOVA table
+  assign_df(paste0("R_anova_raw_df_", i), M_anova$models[[1]]$anova$asDF %>%  
+              mutate(Model = i, paper_ID = paper_ID, origin = "Reproduced", n = c(2:nrow(.), 1)))
+  
+  assign_df(paste0("R_anova_flextable_", i), M_anova$models[[1]]$anova$asDF %>%
+              mutate(across(c(df), ~ Sround(.x, 0))) %>%
+              mutate(p = sapply(p, round_p)) %>%
+              mutate(F = ifelse(F == "NA", "", F)) %>%
+              flextable() %>%
+              set_table_properties(layout = "autofit") %>%
+              set_header_labels(term = "Term", ss = "SS", df = "DF", ms = "MS", p = "p-value") %>%
+              colformat_double(digits = dig) %>%
+              add_footer_lines("SS = Sum of Squares; DF = Degrees of freedom; MS = Mean Square; Calculated using type III SS."))
+  
+  
+  height_per_row <- 400  
+  
+  # Calculate the height based on the number of rows
+  num_rows <- nrow(M$models[[1]]$anova$asDF)
+  calculated_height <- num_rows * height_per_row
+  
+  # Ensure a minimum height in case there are very few rows
+  min_height <- 1200  # Set a minimum height
+  final_height <- max(calculated_height, min_height)
+  
+  height_per_row1 <- 3  
+  
+  # Calculate the height based on the number of rows
+  num_rows1 <- nrow(M$models[[1]]$anova$asDF)
+  calculated_height1 <- num_rows1 * height_per_row1
+  
+  # Ensure a minimum height in case there are very few rows
+  min_height1 <- 12  # Set a minimum height
+  final_height1 <- max(calculated_height1, min_height1)
+  
+  
+  
+  # Process and store normality tests (KS and SW separately)
+  assign_df(paste0("R_normality_ks_raw_df_", i), tidy(ks.test(augment(model)$.std.resid, "pnorm")) %>%
+              mutate(Model = i, paper_ID = paper_ID, origin = "Reproduced"))
+  
+  assign_df(paste0("R_normality_ks_flextable_", i), tidy(ks.test(augment(model)$.std.resid, "pnorm")) %>%
+              mutate(p.value = sapply(p.value, round_p)) %>% 
+              dplyr::select(-alternative) %>% 
+              flextable() %>%
+              set_table_properties(layout = "autofit") %>%
+              set_header_labels(statistic = "Statistic", p.value = "p-value", method = "Method") %>%
+              colformat_double(digits = dig))
+  
+  assign_df(paste0("R_normality_sw_raw_df_", i), tidy(shapiro.test(augment(model)$.std.resid)) %>%
+              mutate(Model = i, paper_ID = paper_ID, origin = "Reproduced"))
+  
+  assign_df(paste0("R_normality_sw_flextable_", i), tidy(shapiro.test(augment(model)$.std.resid)) %>%
+              mutate(p.value = sapply(p.value, round_p)) %>% 
+              flextable() %>%
+              set_table_properties(layout = "autofit") %>%
+              set_header_labels(statistic = "Statistic", p.value = "p-value", method = "Method") %>%
+              colformat_double(digits = dig))
+  
+  # Process and store homoscedasticity test
+  assign_df(paste0("R_homoscedasticity_raw_df_", i), tidy(bptest(model)) %>%
+              mutate(Model = i, paper_ID = paper_ID, origin = "Reproduced"))
+  
+  assign_df(paste0("R_homoscedasticity_flextable_", i), tidy(bptest(model)) %>%
+              mutate(p.value = sapply(p.value, round_p)) %>%
+              mutate(across(c(parameter), ~ Sround(.x, 0))) %>% 
+              flextable() %>%
+              set_table_properties(layout = "autofit") %>%
+              set_header_labels(statistic = "Statistic", p.value = "p-value", method = "Method", parameter = "Parameter") %>%
+              colformat_double(digits = dig))
+  
+  
+   # Compute influence measures and store in a dataframe
+influence_measures <- data.frame(influence.measures(model)$infmat) %>%
+  rownames_to_column("ID") %>%
+  dplyr::select(-cook.d, -hat) %>% 
+  mutate(across(-ID, ~ round(.x, 3)))
+
+
+# Assign dataframe dynamically
+assign_df(paste0("R_influence_measures_raw_df_", i), influence_measures)
+
+# Compute descriptive statistics for influence measures
+influence_summary <- as.data.frame(describe(influence_measures[-1])) %>%   rownames_to_column("term") %>% 
+  select(term, n, mean, sd, median, min, max, skew, kurtosis) 
+
+
+# Cook's Distance plot
+cooks_threshold <- ols_plot_cooksd_chart_custom(model, print_plot = TRUE)
+ggsave(
+  filename = paste0("figures/cooks_threshold_", i, ".png"),
+  plot = cooks_threshold,
+  width = 8, height = 6, dpi = 300
+)
+
+# DFFITS plot
+dffit_threshold <- ols_plot_dffits_custom(model, print_plot = TRUE)
+ggsave(
+  filename = paste0("figures/dffit_threshold_", i, ".png"),
+  plot = dffit_threshold,
+  width = 8, height = 6, dpi = 300
+)
+
+
+# Get the combined plot
+dbetas_threshold <- ols_plot_dfbetas_fixed_y(model, print_plot = TRUE, fixed_ylim = TRUE)
+  ggsave(
+    filename = paste0("figures/dbetas_threshold_", i, ".png"),
+    plot = dbetas_threshold,
+    width = 10, height = 10, dpi = 300
+  )
+  
+  # Assign the object with a dynamic name
+  assign(paste0("dbetas_threshold_", i), dbetas_threshold)
+
+ 
+ 
+  
+   # Process and store description of residuals
+  assign_df(paste0("R_description_flextable_", i), as.data.frame(describe(augment(model))) %>% 
+              rownames_to_column("term") %>%
+              mutate(term = if_else(term == ".hat", ".leverage", term)) %>%
+              filter(term != ".rownames*") %>% 
+              mutate(term = ifelse(row_number() == 1, custom_y_name, term)) %>%  # Replace the first value of 'term'
+              mutate(across(c(n), ~ Sround(.x, 0))) %>%
+              dplyr::select(term, n, mean, sd, median, min, max, skew, kurtosis) %>% 
+              rbind(influence_summary) %>% 
+              flextable() %>%
+              set_table_properties(layout = "autofit") %>%
+              set_header_labels(term = "Term", n = "N", mean = "Mean", sd = "SD", median = "Median", min = "Min", 
+                                max = "Max", skew = "Skewness", kurtosis = "Kurtosis") %>%
+              add_footer_lines("* categorical variable") %>%
+              colformat_double(digits = dig))
+  
+  # Process and independence test
+  assign_df(paste0("R_independence_raw_df_", i), M$models[[1]]$assump$durbin$asDF %>% 
+              mutate(Model = i, paper_ID = paper_ID, origin = "Reproduced"))
+  
+  # Process and store independence test
+  assign_df(paste0("R_independence_flextable_", i), M$models[[1]]$assump$durbin$asDF %>%
+              rename("Statistic" = "dw", "AutoCorrelation" = "autoCor") %>%
+              mutate(p = sapply(p, round_p)) %>%
+              flextable() %>%
+              set_table_properties(layout = "autofit") %>%
+              set_header_labels(p = "p-value") %>%
+              colformat_double(digits = dig))
+  
+  # Scatter plot with smoothers for each predictor
+  scatter_plots <- lapply(predictors, function(predictor) {
+    ggplot(dat, aes_string(x = predictor, y = dependent_var)) +
+      geom_point(color = "black", size = 2.5) +  # Adjust the size as needed
+      geom_smooth(method = "lm", color = "blue", se = FALSE) +
+      geom_smooth(method = "gam", color = "red", se = FALSE) +
+      labs(x = predictor, y = custom_y_name) +
+      theme_bw()+
+      theme(
+        axis.title = element_text(size = 18),  # Adjust the size as needed
+        axis.text = element_text(size = 18)    # Adjust the size as needed
+      )
+  })
+  
+  # Arrange the scatter plots in a grid
+  grid_plot <- do.call("grid.arrange", c(scatter_plots, ncol = 2))
+  
+  # Save the grid plot to a file
+  ggsave(paste0("figures/scatter_plot_", i, ".png"), plot = grid_plot, width = 16, height = final_height1)
+  dev.off() # Close the graphical device to prevent plotting in the output
+  
+  
+
+  
+ 
+  # Save Cook's distance plot
+  cooks_plot <- influencePlot(model, xlab = "Leverage", ylab = "Studentized Residuals") %>%
+    rownames_to_column("ID") %>%
+    rename("Leverage" = "Hat") %>%
+    arrange(CookD) %>% 
+    left_join(influence_measures, by = "ID") %>%
+    flextable() %>%
+    add_footer_lines("StudRes = studentized residuals; CookD = Cook's Distance a combined measure of leverage and influence. DFBETAS (dfb.*) measures how much a specific regression coefficient changes (in standard errors) when an observation is removed; DFFITS measures how much the fitted (predicted) value for an observation changes (in standard deviations) when that observation is removed; cov.r = coefficient covariance ratio which measures how much the overall variance (precision) of the coefficients changes when that observation is removed.") %>%
+      colformat_double(digits = 3)
+  
+  # Create flextable distance plot
+  assign_df(paste0("R_cooks_distance_flextable_", i), cooks_plot)
+  
+  # Save the Cook's distance plot to a PNG file
+  png(filename = paste0("figures/cooks_plots_", i, ".png"), width = 1600, height = 1600, res = 300)
+  influencePlot(model, xlab = "Leverage", ylab = "Studentized Residuals")
+  dev.off() # Close the graphical device to prevent plotting in the output
+  
+  # Process and store collinearity diagnostics
+  assign_df(paste0("R_collinearity_raw_df_", i), M$models[[1]]$assump$collin$asDF %>% 
+              add_row(.before = 1) %>% mutate(Model = i, paper_ID = paper_ID, origin = "Reproduced") %>%
+              slice(2:nrow(M$models[[1]]$anova$asDF)))
+  
+  # Create flextable collinearity diagnostics
+  assign_df(paste0("R_collinearity_flextable_", i), M$models[[1]]$assump$collin$asDF %>%
+              flextable() %>%
+              set_table_properties(layout = "autofit") %>%
+              set_header_labels(vif = "VIF", tol = "Tolerance", term = "Term") %>%
+              add_footer_lines("VIF = Variance Inflation Factor.") %>%
+              colformat_double(digits = dig))
+  
+ # Save QQ plot using the car package
+png(filename = paste0("figures/qq_plot_", i, ".png"), width = 800, height = 800, res = 100)
+
+# Generate the QQ plot using car::qqPlot
+qqPlot(
+  model,
+  distribution = "norm",  # Use "norm" for normality
+  id = FALSE,             # Turn off labeling of extreme points
+  main = "QQ Plot with 95% CI (Normal Distribution)"
+)
+
+dev.off()
+
+# Save COVratio plot 
+png(filename = paste0("figures/covratio_plot_", i, ".png"), width = 800, height = 800, res = 100)
+plot_covratio(model)
+
+dev.off()
+  
+  
+ # Save the component-plus-residual plots to a PNG file with higher resolution and adjusted dimensions
+  png(filename = paste0("figures/res_plot_", i, ".png"), width = 2000, height = final_height, res = 300)
+  resplot <- car::residualPlots(model, layout = c(ceiling(nrow(M$models[[1]]$anova$asDF)/2), 2), type = "rstandard", ylab = "standardized residuals", col = "black", pch = 16, cex = 0.6, ylim = range(pmin(-3, rstandard(model)), pmax(3, rstandard(model)))) 
+  dev.off()
+  
+  # Initialize ResPlot
+  ResPlot <- as.data.frame(resplot)
+  
+  # Check if ResPlot has the expected columns and more than one row
+  if(nrow(ResPlot) > 1 && all(c("Pr(>|Test stat|)", "Test stat") %in% names(ResPlot))) {
+    ResPlot <- ResPlot %>% 
+      mutate(n = c(2:nrow(.), 1), Model = i, paper_ID = paper_ID, origin = "Reproduced") %>% 
+      rename("p.value" = "Pr(>|Test stat|)", "Statistic" = "Test stat") %>% 
+      rownames_to_column("term") %>% 
+      mutate(Results = ifelse(p.value < 0.05, "Linearity violation", "No linearity violation"))
+  } else {
+    # Handle the case where no proper lack-of-fit test is available
+    ResPlot <- data.frame(term = "No possible lack-of-fit tests",
+                          n = NA, Model = i, paper_ID = paper_ID, 
+                          origin = "Reproduced", p.value = NA, 
+                          Statistic = NA, Results = NA)
+  }
+  
+  # Assign the residuals data frame to a dynamically named object
+  assign_df(paste0("R_residuals_raw_df_", i), ResPlot)
+  
+  # Generate the flextable based on the ResPlot data
+  ResPlotflex <- ResPlot %>% 
+    select(-Model, -n, -paper_ID, -origin) %>% 
+    mutate(p.value = sapply(p.value, round_p)) %>%
+    flextable() %>% 
+    set_header_labels(term = "Term", p.value = "p-value") %>%
+    autofit() %>% 
+    add_footer_lines("Specification test for predictors using quadratic tests, for fitted values curvature is tested through Tukey's one-degree-of-freedom test for nonadditivity.") %>%
+      colformat_double(digits = 3)
+  
+  # Assign the flextable to a dynamically named object
+  assign_df(paste0("R_residuals_flextable_", i), ResPlotflex)
+  
+  # Generate visreg plots for the current model
+  visreg_plots <- generate_visreg_plots(model, predictors, dependent_var, custom_y_name, i)
+  
+  if (length(visreg_plots) > 0) {
+    # Arrange the plots in a grid if there are any valid plots
+    reg_plot <- do.call("grid.arrange", c(visreg_plots, ncol = 2))
+    
+    # Save the grid plot to a file
+    ggsave(paste0("figures/reg_plot_", i, ".png"), plot = reg_plot, width = 20, height = final_height1)
+  } else {
+    message("No valid visreg plots generated for model ", model_name)
+  }
+  
+  
+}
+
+
+```
+
+```{r}
+
+# Function to dynamically assign data frames to the global environment
+assign_df <- function(name, df) {
+  assign(name, df, envir = .GlobalEnv)
+}
+
+# Define the predictors globally
+term1 <- R_coefficients_raw_df_1$term
+term2 <- R_coefficients_raw_df_2$term
+term3 <- R_coefficients_raw_df_3$term
+
+
+
+# List of predictors for each model
+predictor_sets <- list(predictors1, predictors2, predictors3 )
+term_sets <- list(term1,term2,term3)
+
+# List of coefficients, fit statistics, and ANOVA data for original models
+original_coefs <- list(
+  data.frame(term = c(term1),
+             est = c(NA, "0.42", "-0.03", "-0.11"),
+             se = c(NA, NA, NA, NA),
+             lower = c(NA, "0.26", "-0.32", "-0.29"),
+             upper = c(NA, "0.57", "0.27", "0.08"),
+             t = c(NA, NA, NA, NA), 
+             p = c(NA, "<0.001", "0.866", "0.254"),
+             stdEst = c(NA, NA, NA, NA), 
+             stdEstLower = c(NA, NA, NA, NA), 
+             stdEstUpper = c(NA, NA, NA, NA)), 
+            
+  data.frame(term = c(term2),
+             est = c(NA, "1.33", "-0.32", "-0.37"),
+             se = c(NA, NA, NA, NA),
+             lower = c(NA, "0.52", "-1.82", "1.33"), # Mistake authors forgot the negative
+             upper = c(NA, "2.14", "1.19", "0.59"),
+             t = c(NA, NA, NA, NA), 
+             p = c(NA, "0.001", "0.681", "0.452"),
+             stdEst = c(NA, NA, NA, NA), 
+             stdEstLower = c(NA, NA, NA, NA), 
+             stdEstUpper = c(NA, NA, NA, NA)), 
+             
+  data.frame(term = c(term3),
+             est = c(NA, "1.09", "0.23", "-0.08"),
+             se = c(NA, NA, NA, NA),
+             lower = c(NA, "0.54", "-0.80", "-0.74"),
+             upper = c(NA, "1.65", "1.26", "0.58"),
+             t = c(NA, NA, NA, NA),
+             p = c(NA, "<0.001", "0.662", "0.809"),
+             stdEst = c(NA, NA, NA, NA), 
+             stdEstLower = c(NA, NA, NA, NA), 
+             stdEstUpper = c(NA, NA, NA, NA)))
+
+original_fit_stats <- list(
+  data.frame(r = NA, r2 = "0.11", r2Adj = NA, aic = NA, rmse = NA, f = "11.34", df1 = 3, df2 = 272, p = "<0.001"),
+  data.frame(r = NA, r2 = "0.04", r2Adj = NA, aic = NA, rmse = NA, f = "3.96", df1 = 3, df2 = 272, p = "0.009"),
+  data.frame(r = NA, r2 = "0.08", r2Adj = NA, aic = NA, rmse = NA, f = "7.73", df1 = 3, df2 = 272, p = "<0.001")
+)
+
+original_anova <- list(
+  data.frame(term = c(predictors1, "Residuals"),
+             ss = c(NA, NA, NA, NA),
+             df = c(NA, NA, NA, NA),
+             ms = c(NA, NA, NA, NA),
+             F = c(NA, NA, NA, NA),
+             p = c(NA, NA, NA, NA)),
+  data.frame(term = c(predictors2, "Residuals"),
+             ss = c(NA, NA, NA, NA),
+             df = c(NA, NA, NA, NA),
+             ms = c(NA, NA, NA, NA),
+             F = c(NA, NA, NA, NA),
+             p = c(NA, NA, NA, NA)),
+  data.frame(term = c(predictors3, "Residuals"),
+             ss = c(NA, NA, NA, NA),
+             df = c(NA, NA, NA, NA),
+             ms = c(NA, NA, NA, NA),
+             F = c(NA, NA, NA, NA),
+             p = c(NA, NA, NA, NA))
+)
+
+# Function to format coefficients data
+format_coefs <- function(coefs_df, model_num, type) {
+  coefs_df <- coefs_df %>% mutate(Model = model_num, paper_ID = paper_ID, origin = type, n = 1:nrow(coefs_df))
+  coefs_df %>%
+    dplyr::select(term, est, se, lower, upper, t, p) %>%  
+     flextable() %>%
+    set_table_properties(layout = "autofit") %>%
+    set_header_labels(term = "Term", lower = "Lower", upper = "Upper", p = "p-value", est = "B", se = "SE", t = "t") %>%
+    add_footer_lines("SE = Standard error; Lower = lower confidence interval; Upper = upper confidence interval.")
+}
+
+# Function to format fit statistics data
+format_fit_stats <- function(fit_stats_df, coef_df, model_num, type) {
+  terms <- coef_df %>% select(term, n) %>% distinct()
+  fit_stats_df <- fit_stats_df %>%
+    slice(rep(1, nrow(terms))) %>%
+    mutate(Model = model_num, paper_ID = paper_ID, origin = type) %>%
+    cbind(terms)
+  fit_stats_df %>%
+    slice(1) %>% 
+    dplyr::select(r, r2, r2Adj, aic, rmse, f, df1, df2, p) %>%
+    mutate(across(c(df1, df2), ~ Sround(.x, 0))) %>%
+    mutate(df1 = ifelse(df1=="NA", "", df1)) %>% 
+    mutate(df2 = ifelse(df2=="NA", "", df2)) %>% 
+    flextable() %>%
+    set_table_properties(layout = "autofit") %>%
+    set_header_labels(r = "R", r2 = "R2", r2Adj = "R2Adj", aic = "AIC", rmse = "RMSE", f = "F", p = "p-value", df1 = "DF1", df2 = "DF2") %>%
+    compose(i = 1, j = "r2", part = "header", value = as_paragraph("R", as_sup("2"))) %>%
+    compose(i = 1, j = "r2Adj", part = "header", value = as_paragraph("R", as_sup("2"), "Adj")) %>%
+   add_footer_lines(as_paragraph(
+    as_i("R"), as_sup("2"), " Adj = Adjusted ", as_i("R"), as_sup("2"), "; ",
+    "AIC = Akaike Information Criterion; RMSE = The Root Mean Squared Error; DF1 = Degrees of freedom for the model; DF2 = Degrees of freedom for the residuals."
+))
+}
+
+# Function to format ANOVA data
+format_anova <- function(anova_df, coef_df, model_num, type) {
+  anova_df <- anova_df %>% mutate(Model = model_num, paper_ID = paper_ID, origin = type, n = c(2:nrow(.), 1))
+  anova_df %>%
+    dplyr::select(-Model, -paper_ID, -origin, -n) %>%
+   # mutate(across(c(df), ~ Sround(.x, 0))) %>% 
+    mutate(df = ifelse(is.na(df), "", df)) %>%
+    flextable() %>%
+    set_table_properties(layout = "autofit") %>%
+    set_header_labels(term = "Term", ms = "MS", ss = "SS", p = "p-value", df = "DF") %>%
+    add_footer_lines("SS = Sum of Squares; DF = Degrees of freedom; MS = Mean Square.")
+}
+
+# Loop to handle original data
+for (i in seq_along(original_coefs)) {
+  # Format coefficients
+  O_coefficients_raw_df <- original_coefs[[i]] %>% mutate(Model = i, paper_ID = paper_ID, origin = "Original", n = 1:nrow(.))
+  assign_df(paste0("O_coefficients_raw_df_", i), O_coefficients_raw_df)
+  
+  O_coefficients_flextable <- format_coefs(original_coefs[[i]], i, "Original")
+  assign_df(paste0("O_coefficients_flextable_", i), O_coefficients_flextable)
+  
+  # Format fit statistics
+  O_fit_stats_raw_df <- original_fit_stats[[i]] %>%
+    slice(rep(1, nrow(O_coefficients_raw_df))) %>%
+    mutate(Model = i, paper_ID = paper_ID, origin = "Original") %>%
+    cbind(select(O_coefficients_raw_df, term, n))
+  assign_df(paste0("O_fit_stats_raw_df_", i), O_fit_stats_raw_df)
+  
+  O_fit_stats_flextable <- format_fit_stats(original_fit_stats[[i]], O_coefficients_raw_df, i, "Original")
+  assign_df(paste0("O_fit_stats_flextable_", i), O_fit_stats_flextable)
+  
+  # Format ANOVA table
+  O_anova_raw_df <- original_anova[[i]] %>% mutate(Model = i, paper_ID = paper_ID, origin = "Original", n = c(2:nrow(.), 1))
+  assign_df(paste0("O_anova_raw_df_", i), O_anova_raw_df)
+  
+  O_anova_flextable <- format_anova(original_anova[[i]], O_coefficients_raw_df, i, "Original")
+  assign_df(paste0("O_anova_flextable_", i), O_anova_flextable)
+}
+
+
+
+
+```
+
+```{r}
+# Function to dynamically assign data frames to the global environment
+assign_df <- function(name, df) {
+  assign(name, df, envir = .GlobalEnv)
+}
+
+# Function to bind rows, rename columns, and select specific columns
+bind_and_rename <- function(models_list, prefix, exclude_cols) {
+  df <- bind_rows(models_list)
+  
+  # Ensure exclude columns exist before renaming
+  existing_cols <- intersect(colnames(df), exclude_cols)
+  
+  df <- df %>%
+    rename_with(~ paste0(prefix, .), -all_of(existing_cols)) %>%
+    dplyr::select(-matches(paste0(prefix, "origin")))
+  
+  return(df)
+}
+
+# Automatically gather original and reproduced coefficients data frames
+origCoef_dfs <- mget(paste0("O_coefficients_raw_df_", seq_len(num_models)))
+repCoef_dfs <- mget(paste0("R_coefficients_raw_df_", seq_len(num_models)))
+
+# Bind and rename coefficients
+origCoef <- bind_and_rename(origCoef_dfs, "O_", c("Model", "paper_ID", "n", "term"))
+repCoef <- bind_and_rename(repCoef_dfs, "R_", c("Model", "paper_ID", "n", "term"))
+
+# Automatically gather original and reproduced fit statistics data frames
+origfit_dfs <- mget(paste0("O_fit_stats_raw_df_", seq_len(num_models)))
+repfit_dfs <- mget(paste0("R_fit_stats_raw_df_", seq_len(num_models)))
+
+# Bind and rename fit statistics
+origfit <- bind_and_rename(origfit_dfs, "O_", c("Model", "paper_ID", "n", "term"))
+repfit <- bind_and_rename(repfit_dfs, "R_", c("Model", "paper_ID", "n", "term"))
+
+# Merge coefficients
+df_list <- list(origCoef, repCoef)
+C <- df_list %>% reduce(full_join, by = c("Model", "paper_ID", "n", "term"))
+
+# Calculate changes and categorize them
+C <- C %>%
+   mutate(
+    O_estN = as.numeric(O_est),
+     O_tN = as.numeric(O_t),
+    O_lowerN = as.numeric(O_lower),
+    O_upperN = as.numeric(O_upper),
+     O_seN=  as.numeric( O_se),
+     R_seN = R_se, 
+    R_se = as.character(R_se),
+    O_pN = as.numeric(O_p),
+    O_pN = ifelse(O_p == "<0.001", 0.00099, as.numeric(O_p)),
+    R_estN =  R_est,
+    R_tN =  R_t,
+    R_lowerN = R_lower,
+    R_upperN = R_upper,
+    R_pN = R_p,
+    R_est = as.character(R_est),
+    R_t = as.character(R_t),
+    R_lower = as.character(R_lower),
+    R_upper = as.character( R_upper),
+    R_p = as.character(R_p),
+        changeB = R_estN - O_estN,
+    change.t = R_tN - O_tN,
+    change.lci = R_lowerN - O_lowerN,
+    change.uci = R_upperN - O_upperN,
+    change.se = R_seN -O_seN, 
+    R_pN = if_else(R_pN < 0.001, 0.00099, R_pN),
+    changep = R_pN - O_pN,
+        SigChange = case_when(
+      O_pN < 0.05 & R_pN < 0.05 ~ "Remains significant",
+      O_pN >= 0.05 & R_pN >= 0.05 ~ "Remains non-sig",
+      O_pN < 0.05 & R_pN >= 0.05 ~ "Change from sig to non-sig",
+      O_pN >= 0.05 & R_pN < 0.05 ~ "Change from non-sig to sig"),
+    SigChangeDirection = case_when(
+      O_pN < 0.05 & R_pN < 0.05 & (sign(O_estN) != sign(R_estN)) ~ "Remains sig, B changes direction",
+      O_pN < 0.05 & R_pN < 0.05 & (sign(O_estN) == sign(R_estN)) ~ "Remains sig, B same direction",
+      O_pN >= 0.05 & R_pN < 0.05 & (sign(O_estN) == sign(R_estN) | sign(O_estN) != sign(R_estN)) ~ "Non-sig to sig, B same direction",
+      O_pN < 0.05 & R_pN >= 0.05 & (sign(O_estN) != sign(R_estN) | sign(O_estN) == sign(R_estN)) ~ "Sig to non-sig, B changes direction",
+      O_pN >= 0.05 & R_pN >= 0.05 & (sign(O_estN) != sign(R_estN)) ~ "Remains non-sig, B changes direction",
+      O_pN >= 0.05 & R_pN >= 0.05 & (sign(O_estN) == sign(R_estN)) ~ "Remains non-sig, B same direction",
+      TRUE ~ NA_character_))
+
+
+# Merge fit statistics
+df_list2 <- list(origfit, repfit)
+F <- df_list2 %>% reduce(full_join, by = c("Model", "paper_ID", "n", "term"))
+
+# Calculate changes and categorize them
+F <- F %>%
+    mutate(
+    O_r2N = as.numeric(O_r2),
+     O_r2AdjN = as.numeric(O_r2Adj),
+     O_fN = as.numeric(O_f),
+    O_pN = as.numeric(O_p),
+    O_pN = ifelse(O_p == "<0.001", 0.00099, as.numeric(O_p)),
+    R_r2N =R_r2,
+    R_r2AdjN =R_r2Adj,
+    R_fN = R_f,
+    R_pN = R_p,
+    R_r2 = as.character(R_r2),
+    R_r2Adj = as.character(R_r2Adj),
+    R_f = as.character(R_f),
+    R_p = as.character(R_p),
+    changeR2 = R_r2N - O_r2N,
+    changeR2Adj = R_r2AdjN - O_r2AdjN,
+    Change.f = R_fN - O_fN,
+    Change.df1 = R_df1 - O_df1,
+    Change.df2 = R_df2 - O_df2,
+    Reproduce.df1 = case_when(
+      Change.df1 == 0 ~ "Reproduced",
+      Change.df1 < 0 | Change.df1 > 0 ~ "Not Reproduced",
+      TRUE ~ NA_character_),
+    Reproduce.df2 = case_when(
+      Change.df2 == 0 ~ "Reproduced",
+      Change.df2 < 0 | Change.df2 > 0 ~ "Not Reproduced",
+      TRUE ~ NA_character_))
+
+
+# Automatically gather original and reproduced ANOVA data frames
+origANOVA_dfs <- mget(paste0("O_anova_raw_df_", seq_len(num_models)))
+repANOVA_dfs <- mget(paste0("R_anova_raw_df_", seq_len(num_models)))
+
+# Bind and rename ANOVA statistics
+origANOVA <- bind_and_rename(origANOVA_dfs, "O_", c("Model", "paper_ID", "n", "term")) %>%
+  mutate(term = ifelse(term == "Residuals", "Intercept", term))
+
+repANOVA <- bind_and_rename(repANOVA_dfs, "R_", c("Model", "paper_ID", "n", "term")) %>%
+  mutate(term = ifelse(term == "Residuals", "Intercept", term))
+
+# Merge ANOVA statistics
+df_list3 <- list(origANOVA, repANOVA)
+G <- df_list3 %>% reduce(full_join, by = c("Model", "paper_ID", "n", "term"))
+G <- G %>%
+    mutate( O_pN = as.numeric(O_p),
+             R_pN = R_p,
+              R_p = as.character(R_p),
+            R_p = as.character(R_p))
+
+# Rename p-values for consistency
+CX <- C %>% rename("O_p.value" = "O_p", "R_p.value" = "R_p", "O_p.valueN" = "O_pN", "R_p.valueN" = "R_pN")
+FX <- F %>% rename("O_p_value" = "O_p", "R_p_value" = "R_p", "O_p_valueN" = "O_pN", "R_p_valueN" = "R_pN")
+GX <- G %>% rename("O_pvalue" = "O_p", "R_pvalue" = "R_p", "O_pvalueN" = "O_pN", "R_pvalueN" = "R_pN")
+df_list30 <- list(CX, FX)
+fdat <- df_list30%>% reduce(full_join, by = c("Model", "paper_ID", "n", "term"))
+
+
+
+decimal_places <- function(x) {
+  if (is.na(x)) {
+    return(NA)
+  }
+  # Ensure x is treated as a string and count the decimals even if the value is 0.000
+  x_str <- as.character(x)
+  
+  if (grepl("\\.", x_str)) {
+    # Count characters after the decimal point
+    return(nchar(strsplit(x_str, ".", fixed = TRUE)[[1]][[2]]))
+  } else {
+    return(0)  # If there's no decimal point, return 0
+  }
+}
+
+# Function to compare absolute difference to rounding error with three categories
+compare_diff_to_rounding_error <- function(original_num, reproduced_num, dec_places) {
+  if (is.na(original_num) || is.na(reproduced_num) || is.na(dec_places)) {
+    return(list(category = NA, rounding_error_threshold_1 = NA, rounding_error_threshold_2 = NA))
+  }
+  
+  rounding_error_threshold_1 <- 0.50 * 10^(-dec_places)
+  rounding_error_threshold_2 <- 0.999 * 10^(-dec_places)
+  absolute_diff <- abs(original_num - reproduced_num)
+  
+  category <- if (absolute_diff <= rounding_error_threshold_1) {
+    "Reproduced"
+  } else if (absolute_diff > rounding_error_threshold_1 && absolute_diff <= rounding_error_threshold_2) {
+    "Incorrect Rounding"
+  } else {
+    "Not Reproduced"
+  }
+  
+  return(list(category = category, rounding_error_threshold_1 = rounding_error_threshold_1, rounding_error_threshold_2 = rounding_error_threshold_2))
+}
+
+# List of comparisons to perform
+comparisons <- list(
+  list(o_col_cat = "O_est", o_col_num = "O_estN", r_col = "R_estN"),
+  list(o_col_cat = "O_lower", o_col_num = "O_lowerN", r_col = "R_lowerN"), 
+  list(o_col_cat = "O_upper", o_col_num = "O_upperN", r_col = "R_upperN"),
+  list(o_col_cat = "O_se", o_col_num = "O_seN", r_col = "R_seN"),
+  list(o_col_cat = "O_t", o_col_num = "O_tN", r_col = "R_tN"),
+  list(o_col_cat = "O_p.value", o_col_num = "O_p.valueN", r_col = "R_p.valueN"),
+  list(o_col_cat = "O_r2", o_col_num = "O_r2N", r_col = "R_r2N"),
+  list(o_col_cat = "O_r2Adj", o_col_num = "O_r2AdjN", r_col = "R_r2AdjN"),
+  list(o_col_cat = "O_f", o_col_num = "O_fN", r_col = "R_fN")
+)
+
+# Applying the comparisons
+for (comp in comparisons) {
+  o_col_cat <- comp$o_col_cat
+  o_col_num <- comp$o_col_num
+  r_col <- comp$r_col
+  
+  # Create dynamic column names
+  category_col <- paste0("category_", o_col_cat)
+  threshold_1_col <- paste0("rounding_error_threshold_1_", o_col_cat)
+  threshold_2_col <- paste0("rounding_error_threshold_2_", o_col_cat)
+  
+  # Apply the function and unnest the result
+  fdat <- fdat %>%
+    rowwise() %>%
+    mutate(dec_places = decimal_places(!!sym(o_col_cat))) %>%
+    mutate(result = list(compare_diff_to_rounding_error(!!sym(o_col_num), !!sym(r_col), dec_places))) %>%
+    unnest_wider(result, names_sep = paste0("_", o_col_cat, "_")) %>%
+    ungroup() %>%
+    select(-dec_places)
+}
+
+
+
+# Reshape est
+est_long <- fdat %>%
+  select(paper_ID, Model, term, n, changeB, change.lci, change.uci,change.se, changep, SigChange, SigChangeDirection,
+         changeR2,Change.f, Change.df1, Change.df2, Reproduce.df1, Reproduce.df2,
+          result_O_est_category, result_O_est_rounding_error_threshold_1, result_O_est_rounding_error_threshold_2,
+          result_O_lower_category, result_O_lower_rounding_error_threshold_1, result_O_lower_rounding_error_threshold_2, 
+          result_O_upper_category, result_O_upper_rounding_error_threshold_1, result_O_upper_rounding_error_threshold_2,
+         result_O_se_category, result_O_se_rounding_error_threshold_1, result_O_se_rounding_error_threshold_2,
+         result_O_t_category, result_O_t_rounding_error_threshold_1, result_O_t_rounding_error_threshold_2,
+          result_O_r2_category, result_O_r2_rounding_error_threshold_1, result_O_r2_rounding_error_threshold_2,
+         result_O_r2Adj_category, result_O_r2Adj_rounding_error_threshold_1, result_O_r2Adj_rounding_error_threshold_2,
+          result_O_f_category, result_O_f_rounding_error_threshold_1, result_O_f_rounding_error_threshold_2,
+           O_est, R_est) %>%
+  pivot_longer(
+    cols = c(O_est, R_est),
+    names_to = 'Source',
+    values_to = 'est'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_est", "Original", "Reproduced"))
+
+estN_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_estN, R_estN) %>%
+  pivot_longer(
+    cols = c(O_estN, R_estN),
+    names_to = 'Source',
+    values_to = 'estN'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_estN", "Original", "Reproduced"))
+
+
+# Reshape lower
+lower_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_lower, R_lower) %>%
+  pivot_longer(
+    cols = c(O_lower, R_lower),
+    names_to = 'Source',
+    values_to = 'lower'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_lower", "Original", "Reproduced"))
+
+# Reshape lowerN
+lowerN_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_lowerN, R_lowerN) %>%
+  pivot_longer(
+    cols = c(O_lowerN, R_lowerN),
+    names_to = 'Source',
+    values_to = 'lowerN'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_lowerN", "Original", "Reproduced"))
+
+# Reshape upper
+upper_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_upper, R_upper) %>%
+  pivot_longer(
+    cols = c(O_upper, R_upper),
+    names_to = 'Source',
+    values_to = 'upper'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_upper", "Original", "Reproduced"))
+
+# Reshape upperN
+upperN_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_upperN, R_upperN) %>%
+  pivot_longer(
+    cols = c(O_upperN, R_upperN),
+    names_to = 'Source',
+    values_to = 'upperN'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_upperN", "Original", "Reproduced"))
+
+
+# Reshape se
+se_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_se, R_se) %>%
+  pivot_longer(
+    cols = c(O_se, R_se),
+    names_to = 'Source',
+    values_to = 'se'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_se", "Original", "Reproduced"))
+
+# Reshape se
+seN_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_seN, R_seN) %>%
+  pivot_longer(
+    cols = c(O_seN, R_seN),
+    names_to = 'Source',
+    values_to = 'seN'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_seN", "Original", "Reproduced"))
+
+
+# Reshape t
+t_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_t, R_t) %>%
+  pivot_longer(
+    cols = c(O_t, R_t),
+    names_to = 'Source',
+    values_to = 't'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_t", "Original", "Reproduced"))
+
+# Reshape t
+tN_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_tN, R_tN) %>%
+  pivot_longer(
+    cols = c(O_tN, R_tN),
+    names_to = 'Source',
+    values_to = 'tN'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_tN", "Original", "Reproduced"))
+
+# Reshape stdEst
+stdEst_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_stdEst, R_stdEst) %>%
+  pivot_longer(
+    cols = c(O_stdEst, R_stdEst),
+    names_to = 'Source',
+    values_to = 'stdEst'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_stdEst", "Original", "Reproduced"))
+
+# Reshape stdEstLower
+stdEstLower_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_stdEstLower, R_stdEstLower) %>%
+  pivot_longer(
+    cols = c(O_stdEstLower, R_stdEstLower),
+    names_to = 'Source',
+    values_to = 'stdEstLower'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_stdEstLower", "Original", "Reproduced"))
+
+# Reshape stdEstUpper
+stdEstUpper_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_stdEstUpper, R_stdEstUpper) %>%
+  pivot_longer(
+    cols = c(O_stdEstUpper, R_stdEstUpper),
+    names_to = 'Source',
+    values_to = 'stdEstUpper'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_stdEstUpper", "Original", "Reproduced"))
+
+# Reshape r
+r_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_r, R_r) %>%
+  pivot_longer(
+    cols = c(O_r, R_r),
+    names_to = 'Source',
+    values_to = 'r'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_r", "Original", "Reproduced"))
+
+# make numeric
+fdat$R_r2<-as.numeric(fdat$R_r2)
+fdat$O_r2<-as.numeric(fdat$O_r2)
+
+# Reshape r2
+r2_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_r2, R_r2) %>%
+  pivot_longer(
+    cols = c(O_r2, R_r2),
+    names_to = 'Source',
+    values_to = 'r2'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_r2", "Original", "Reproduced"))
+
+
+# Reshape r2Adj
+r2Adj_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_r2Adj, R_r2Adj) %>%
+  pivot_longer(
+    cols = c(O_r2Adj, R_r2Adj),
+    names_to = 'Source',
+    values_to = 'r2Adj'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_r2Adj", "Original", "Reproduced"))
+
+# Reshape r2Adj
+r2AdjN_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_r2AdjN, R_r2AdjN) %>%
+  pivot_longer(
+    cols = c(O_r2AdjN, R_r2AdjN),
+    names_to = 'Source',
+    values_to = 'r2AdjN'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_r2AdjN", "Original", "Reproduced"))
+
+
+# Reshape aic
+aic_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_aic, R_aic) %>%
+  pivot_longer(
+    cols = c(O_aic, R_aic),
+    names_to = 'Source',
+    values_to = 'aic'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_aic", "Original", "Reproduced"))
+
+# Reshape rmse
+rmse_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_rmse, R_rmse) %>%
+  pivot_longer(
+    cols = c(O_rmse, R_rmse),
+    names_to = 'Source',
+    values_to = 'rmse'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_rmse", "Original", "Reproduced"))
+
+# Reshape f
+f_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_f, R_f) %>%
+  pivot_longer(
+    cols = c(O_f, R_f),
+    names_to = 'Source',
+    values_to = 'f'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_f", "Original", "Reproduced"))
+
+# Reshape df1
+df1_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_df1, R_df1) %>%
+  pivot_longer(
+    cols = c(O_df1, R_df1),
+    names_to = 'Source',
+    values_to = 'df1'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_df1", "Original", "Reproduced"))
+
+
+# Reshape df2
+df2_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_df2, R_df2) %>%
+  pivot_longer(
+    cols = c(O_df2, R_df2),
+    names_to = 'Source',
+    values_to = 'df2'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_df2", "Original", "Reproduced"))
+
+
+# Reshape p.value
+p.value_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_p.value, R_p.value) %>%
+  pivot_longer(
+    cols = c(O_p.value, R_p.value),
+    names_to = 'Source',
+    values_to = 'p.value'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_p.value", "Original", "Reproduced"))
+
+# Reshape p.value
+p.valueN_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_p.valueN, R_p.valueN) %>%
+  pivot_longer(
+    cols = c(O_p.valueN, R_p.valueN),
+    names_to = 'Source',
+    values_to = 'p.valueN'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_p.valueN", "Original", "Reproduced"))
+
+
+# Reshape p_value
+p_value_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_p_value, R_p_value) %>%
+  pivot_longer(
+    cols = c(O_p_value, R_p_value),
+    names_to = 'Source',
+    values_to = 'p_value'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_p_value", "Original", "Reproduced"))
+
+# Reshape p_value
+p_valueN_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_p_valueN, R_p_valueN) %>%
+  pivot_longer(
+    cols = c(O_p_valueN, R_p_valueN),
+    names_to = 'Source',
+    values_to = 'p_valueN'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_p_valueN", "Original", "Reproduced"))
+
+
+# Initialize the final dataset with est_long
+ffdat <- est_long
+
+
+# Merge each reshaped dataset one by one
+ffdat <- ffdat %>%
+  full_join(estN_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(lower_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(lowerN_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(upper_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(upperN_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(se_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(seN_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(t_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(tN_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(stdEst_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(stdEstLower_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(stdEstUpper_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(r_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>%  
+  full_join(r2_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(r2Adj_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(r2AdjN_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(aic_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(rmse_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(f_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(df1_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(df2_long,by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+ 
+  
+ 
+ full_join(p_value_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+ full_join(p_valueN_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+
+ full_join(p.value_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+ full_join(p.valueN_long, by = c("paper_ID", "Model", "term", "n", "Source")) 
+
+
+
+
+
+# Assign final datasets to the global environment
+assign_df("origCoef", origCoef)
+assign_df("repCoef", repCoef)
+assign_df("fit_orig", origfit)
+assign_df("fit_rep", repfit)
+assign_df("anova_orig", origANOVA)
+assign_df("anova_rep", repANOVA)
+assign_df("fdat", fdat)
+assign_df("ffdat", ffdat)
+
+
+
+```
+
+```{r}
+# Function to dynamically assign data frames to the global environment
+assign_df <- function(name, df) {
+  assign(name, df, envir = .GlobalEnv)
+}
+
+# Function to dynamically fetch a data frame
+get_dynamic_df <- function(df_name) {
+  get(df_name, envir = .GlobalEnv)
+}
+
+# Get the unique model numbers
+model_numbers <- unique(fdat$Model)
+
+# Split the fdat data frame by Model and assign each subset to the global environment
+split_fdat <- split(fdat, fdat$Model)
+
+# Dynamically assign each split dataset to the global environment
+for (i in seq_along(model_numbers)) {
+  model_number <- model_numbers[i]
+  assign_df(paste0("fdat", model_number), split_fdat[[i]])
+}
+
+
+
+# Function to generate a forest plot
+generate_forest_plot <- function(model_num) {
+  original_data <- get_dynamic_df(paste0("O_coefficients_raw_df_", model_num)) %>%
+    dplyr::select(n, term, est, lower, upper) %>%
+    dplyr::mutate(Source = "Original") %>%
+    dplyr::mutate(est = as.numeric(est), lower = as.numeric(lower), upper = as.numeric(upper)) %>%
+    dplyr::mutate(Order = 0)  # Set Order to 0 for Original
+  
+  reproduced_data <- get_dynamic_df(paste0("R_coefficients_raw_df_", model_num)) %>%
+    dplyr::select(n, term, est, lower, upper) %>%
+    dplyr::mutate(Source = "Reproduced") %>%
+    dplyr::mutate(est = as.numeric(est), lower = as.numeric(lower), upper = as.numeric(upper)) %>%
+    dplyr::mutate(Order = 1)  # Set Order to 1 for Reproduced
+  
+  combined_data <- dplyr::bind_rows(original_data, reproduced_data) %>%
+    dplyr::filter(term != "Intercept") %>%
+    dplyr::mutate(OrderHelper = n + Order / 1000) %>%
+    dplyr::arrange(OrderHelper) %>%
+    dplyr::mutate(Label = paste(term, Source, sep = " - ")) %>%
+    dplyr::arrange(desc(OrderHelper))  # Reverse the order of the data
+  
+  # Set the factor levels based on reversed order
+  combined_data$Label <- factor(combined_data$Label, levels = combined_data$Label)
+  
+  
+  plot <- ggplot2::ggplot(combined_data, ggplot2::aes(x = est, y = Label)) +
+    ggplot2::geom_errorbar(ggplot2::aes(xmin = lower, xmax = upper, color = Source), width = 0.2) +
+    ggplot2::geom_point(ggplot2::aes(color = Source), size = 3) +
+    ggplot2::scale_color_manual(values = c("Original" = "darkblue", "Reproduced" = "darkred")) +
+    ggplot2::labs(x = "Coefficient", y = "") +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(
+      panel.grid.minor = element_blank(),
+      panel.background = element_blank(),
+      plot.background = ggplot2::element_rect(fill = "white", color = NA),
+      legend.position = "top",
+      axis.line = ggplot2::element_line(color = "black")
+    )
+  
+  ggplot2::ggsave(paste0("figures/forest_plot_model_", model_num, ".png"), plot = plot)
+}
+
+
+# Function to generate Bland-Altman plot using blandr with error handling
+generate_bland_altman_plot <- function(fdat, model_num) {
+  tryCatch({
+    # Perform Bland-Altman analysis to get statistics
+    blandr_results <- blandr::blandr.statistics(
+      method1 = fdat$R_p.valueN,
+      method2 = fdat$O_p.valueN
+    )
+    
+    # Generate the Bland-Altman plot without default annotations
+    plot <- blandr::blandr.draw(
+      fdat$R_p.valueN, 
+      fdat$O_p.valueN, 
+      ciDisplay = FALSE, 
+      ciShading = FALSE,
+      plotTitle = paste("")
+    )
+    
+    # Add custom annotations with text above the lines, rounded to three decimals
+    plot <- plot +
+      ggplot2::geom_hline(yintercept = blandr_results$bias, color = "blue", linetype = "dashed") +
+      ggplot2::geom_hline(yintercept = blandr_results$upperLOA, color = "red", linetype = "dashed") +
+      ggplot2::geom_hline(yintercept = blandr_results$lowerLOA, color = "red", linetype = "dashed") +
+      ggplot2::annotate("text", x = max(fdat$R_p.valueN, na.rm = TRUE), y = blandr_results$bias + 0.01, 
+                        label = paste("Mean Bias:", Sround(blandr_results$bias, 3)), vjust = -0.5, hjust = 1) +
+      ggplot2::annotate("text", x = max(fdat$R_p.valueN, na.rm = TRUE), y = blandr_results$upperLOA + 0.01, 
+                        label = paste("Upper LoA:", Sround(blandr_results$upperLOA, 3)), vjust = -0.5, hjust = 1) +
+      ggplot2::annotate("text", x = max(fdat$R_p.valueN, na.rm = TRUE), y = blandr_results$lowerLOA + 0.01, 
+                        label = paste("Lower LoA:", Sround(blandr_results$lowerLOA, 3)), vjust = -0.5, hjust = 1) +
+      ggplot2::labs(
+        x = "Mean of Reproduced and Original",
+        y = "Difference (Reproduced - Original)"
+      ) +
+      ggplot2::theme_minimal() +
+      ggplot2::theme(
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        plot.background = ggplot2::element_rect(fill = "white", color = NA),
+        panel.border = ggplot2::element_rect(color = "black", fill = NA, size = 1),
+        axis.text = ggplot2::element_text(size = 12),
+        axis.title = ggplot2::element_text(size = 14),
+        plot.title = ggplot2::element_text(hjust = 0.5, size = 16)
+      )
+    
+    # Save the plot
+    ggplot2::ggsave(filename = paste0("figures/bland_altman_plot_model_", model_num, ".png"), plot = plot, width = 7.74, height = 5.47)
+  }, error = function(e) {
+    message(paste("Bland-Altman plot failed for model", model_num, ": ", e$message))
+  })
+}
+
+
+# Function to create and assign the CC table
+create_cc_table <- function(fdat, model_num) {
+  CC <- fdat %>%
+    dplyr::select(term, O_estN, R_estN, changeB, result_O_est_category) %>%
+    mutate(across(c(R_estN, changeB), ~ Sround(.x, thresround))) %>% 
+    mutate(changeB = ifelse(changeB=="NA", "", changeB)) %>% 
+     mutate(O_estN = ifelse(O_estN=="NA", "", O_estN)) %>%
+     mutate(R_estN = ifelse(R_estN=="NA", "", R_estN)) %>%
+    flextable::flextable() %>%
+    flextable::align(align = "left", part = "all") %>%
+    flextable::width(j = "result_O_est_category", width = 2.5) %>%
+    flextable::set_header_labels(O_estN = "O_B", R_estN = "R_B", changeB = "Change.B", result_O_est_category = "reproduce.B") %>%
+    flextable::add_footer_lines("O_B = original B; R_B = reproduced B; Change.B = change in R_B - O_B; Reproduce.B = B reproduced.")
+  
+  assign_df(paste0("CC_model_", model_num), CC)
+}
+
+# Function to create and assign the CL table
+create_cl_table <- function(fdat, model_num) {
+  CL <- fdat %>%
+    dplyr::select(term, O_lowerN, R_lowerN, change.lci, result_O_lower_category) %>%
+    mutate(across(c(R_lowerN, change.lci), ~ Sround(.x, thresround))) %>% 
+    mutate(change.lci = ifelse(change.lci=="NA", "", change.lci)) %>% 
+    mutate(R_lowerN = ifelse(R_lowerN=="NA", "", R_lowerN)) %>%
+    flextable::flextable() %>%
+    flextable::align(align = "left", part = "all") %>%
+    flextable::width(j = "result_O_lower_category", width = 2.5) %>%
+    flextable::set_header_labels(O_lowerN= "O_lower", R_lowerN= "R_lower",  change.lci = "Change.lci", result_O_lower_category = "Reproduce.lower") %>%
+    flextable::add_footer_lines("O_lower = original lower confidence interval; R_lower = reproduced lower confidence interval; change.lci = change in R_lower - O_lower; Reproduce.lower = lower confidence interval reproduced.")
+  
+  assign_df(paste0("CL_model_", model_num), CL)
+}
+
+# Function to create and assign the CU table
+create_cu_table <- function(fdat, model_num) {
+  CU <- fdat %>%
+    dplyr::select(term, O_upperN, R_upperN, change.uci, result_O_upper_category) %>%
+     mutate(across(c(R_upperN, change.uci), ~ Sround(.x, thresround))) %>% 
+     mutate(change.uci = ifelse(change.uci=="NA", "", change.uci)) %>% 
+    mutate(R_upperN = ifelse(R_upperN=="NA", "", R_upperN)) %>%
+    flextable::flextable() %>%
+    flextable::align(align = "left", part = "all") %>%
+    flextable::width(j = "result_O_upper_category", width = 2.5) %>%
+    flextable::set_header_labels(O_upperN= "O_upper", R_upperN= "R_upper", change.uci = "Change.uci", result_O_upper_category = "Reproduce.upper") %>%
+    flextable::add_footer_lines("O_upper = original upper confidence interval; R_upper = reproduced upper confidence interval; change.uci = change in R_upper - O_upper; Reproduce.upper = upper confidence interval reproduced.")
+  
+  assign_df(paste0("CU_model_", model_num), CU)
+}
+
+
+# Function to create and assign the CL table
+create_se_table <- function(fdat, model_num) {
+  SE <- fdat %>%
+    dplyr::select(term, O_seN, R_seN, change.se, result_O_se_category) %>%
+    mutate(across(c(R_seN, change.se), ~ Sround(.x, thresround))) %>% 
+    mutate(change.se = ifelse(change.se=="NA", "", change.se)) %>% 
+    mutate(R_seN = ifelse(R_seN=="NA", "", R_seN)) %>% 
+    flextable::flextable() %>%
+    flextable::align(align = "left", part = "all") %>%
+    flextable::width(j = "result_O_se_category", width = 2.5) %>%
+    flextable::set_header_labels(O_seN= "O_SE", R_seN= "R_SE",  change.se = "Change.SE", result_O_se_category = "Reproduce.SE") %>%
+    flextable::add_footer_lines("O_SE = original standard error; R_SE = reproduced standard error; Change.SE = change in R_SE - O_SE; Reproduce.lower = standard error reproduced.")
+  
+  assign_df(paste0("SE_model_", model_num), SE)
+}
+
+# Function to create and assign the CL table
+create_t_table <- function(fdat, model_num) {
+  t <- fdat %>%
+    dplyr::select(term, O_tN, R_tN, change.t, result_O_t_category) %>%
+    mutate(across(c(R_tN, change.t), ~ Sround(.x, thresround))) %>% 
+    mutate(change.t = ifelse(change.t =="NA", "", change.t)) %>% 
+    mutate(R_tN = ifelse(R_tN=="NA", "", R_tN)) %>% 
+    flextable::flextable() %>%
+    flextable::align(align = "left", part = "all") %>%
+    flextable::width(j = "result_O_t_category", width = 2.5) %>%
+    flextable::set_header_labels(O_tN= "O_t", R_tN= "R_t",  change.t = "Change.t", result_O_t_category = "Reproduce.t") %>%
+    flextable::add_footer_lines("O_t = original t value; R_t = reproduced t value; Change.t = change in R_t - O_t; Reproduce.lower = t value reproduced.")
+  
+  assign_df(paste0("t_model_", model_num), t)
+}
+
+
+# Function to create and assign the FF table
+create_r2_table <- function(fdat, model_num) {
+  R2 <- fdat %>%
+    dplyr::filter(n == 1) %>%
+    dplyr::select(O_r2N, R_r2N, changeR2, result_O_r2_category) %>%
+    mutate(across(c(R_r2N, changeR2), ~ Sround(.x, thresround))) %>% 
+    mutate(O_r2N = ifelse(O_r2N =="NA", "", O_r2N)) %>% 
+      mutate(changeR2 = ifelse(changeR2=="NA", "", changeR2)) %>% 
+    flextable::flextable() %>%
+    compose(i = 1, j = "O_r2N", part = "header", value = as_paragraph("O_R", as_sup("2"))) %>%
+    compose(i = 1, j = "R_r2N", part = "header", value = as_paragraph("R_R", as_sup("2"))) %>%
+    compose(i = 1, j = "changeR2", part = "header", value = as_paragraph("Change.R", as_sup("2"))) %>%
+    compose(i = 1, j = "result_O_r2_category", part = "header", value = as_paragraph("Reproduce.R", as_sup("2"))) %>%
+    flextable::align(align = "left", part = "all") %>%
+    flextable::width(j = "result_O_r2_category", width = 2.5) %>%
+    flextable::  colformat_double(digits = 3) %>%
+    flextable::add_footer_lines(
+  as_paragraph(
+    "O_R", as_sup("2"), " = original R", as_sup("2"), 
+    "; R_R", as_sup("2"), " = reproduced R", as_sup("2"), 
+    "; Change.R", as_sup("2"), " = change in R_R", as_sup("2"), " - O_R", as_sup("2")
+  )
+)
+  
+  assign_df(paste0("R2_model_", model_num),  R2)
+}
+
+
+# Function to create and assign the FF table
+create_r2Adj_table <- function(fdat, model_num) {
+  R2Adj <- fdat %>%
+    dplyr::filter(n == 1) %>%
+    dplyr::select(O_r2AdjN, R_r2AdjN, changeR2Adj, result_O_r2Adj_category) %>%
+    mutate(across(c(R_r2AdjN, changeR2Adj), ~ Sround(.x, thresround))) %>% 
+    mutate(O_r2AdjN = ifelse(O_r2AdjN =="NA", "", O_r2AdjN)) %>% 
+      mutate(changeR2Adj = ifelse(changeR2Adj=="NA", "", changeR2Adj)) %>% 
+    flextable::flextable() %>%
+    compose(i = 1, j = "O_r2AdjN", part = "header", value = as_paragraph("O_R", as_sup("2"), "Adj")) %>%
+    compose(i = 1, j = "R_r2AdjN", part = "header", value = as_paragraph("R_R", as_sup("2"), "Adj")) %>%
+    compose(i = 1, j = "changeR2Adj", part = "header", value = as_paragraph("Change.R", as_sup("2"), "Adj")) %>%
+    compose(i = 1, j = "result_O_r2Adj_category", part = "header", value = as_paragraph("Reproduce.R", as_sup("2"), "Adj")) %>%
+    flextable::align(align = "left", part = "all") %>%
+    flextable::width(j = "result_O_r2Adj_category", width = 2.5) %>%
+    flextable::  colformat_double(digits = 3) %>%
+    flextable::add_footer_lines(
+        as_paragraph(
+            "O_R", as_sup("2"), "Adj = original R", as_sup("2"), " Adjusted", 
+            "; R_R", as_sup("2"), "Adj = reproduced R", as_sup("2"), " Adjusted", 
+            "; Change.R", as_sup("2"), "Adj = change in R", as_sup("2"), "Adj (R", as_sup("2"), "Adj  - O_R", as_sup("2"), "Adj)",
+            "; Reproduce.R", as_sup("2"), "Adj = R", as_sup("2"), " Adjusted reproduced."
+        )
+    )
+  assign_df(paste0("R2Adj_model_", model_num),  R2Adj)
+}
+
+# Function to create and assign the DF table
+create_df_table <- function(fdat, model_num) {
+  DF <- fdat %>%
+    dplyr::filter(n == 1) %>%
+    dplyr::select(O_df1, R_df1, Change.df1, Reproduce.df1, O_df2, R_df2, Change.df2, Reproduce.df2) %>%
+    flextable::flextable() %>%
+    flextable::align(align = "left", part = "all") %>%
+    flextable::set_header_labels(O_df1 = "O_DF1", R_df1 = "R_DF1", Change.df1 = "Change.DF1", Reproduce.df1 = "Reproduce.DF1", O_df2 = "O_DF2", R_df2 = "R_DF2", Change.df2 = "Change.DF2", Reproduce.df2 = "Reproduce.DF2") %>%
+    flextable::add_footer_lines("O_DF1 = original degrees of freedom for the model; R_DF1 = reproduced degrees of freedom for the model; Change.DF1 = change in R_DF1 - O_DF1; Reproduce.DF1 = reproduced degrees of freedom for the model (R_DF1 = O_DF1); O_DF2 = original degrees of freedom for the residuals; R_DF2 = reproduced degrees of freedom for the residuals; Change.DF2 = change in R_DF2 - O_DF2; Reproduce.DF2 = reproduced degrees of freedom for the residuals (R_DF2 = O_DF2).")
+  
+  assign_df(paste0("DF_model_", model_num), DF)
+}
+
+create_cp_table <- function(fdat, model_num) {
+  Cp <- fdat %>%
+    dplyr::select(term, O_p.value, R_p.valueN, changep, result_O_p.value_category, SigChangeDirection) %>%
+    mutate(changep = Sround(changep, 4)) %>%
+    mutate(R_p.valueN = sapply(R_p.valueN, round_p)) %>%
+    mutate(O_p.value = ifelse(O_p.value == "NA", "", O_p.value)) %>%
+    mutate(changep = ifelse(changep == "NA", "", changep)) %>%
+    flextable::flextable() %>%
+    flextable::align(align = "left", part = "all") %>%
+    flextable::width(j = "SigChangeDirection", width = 3) %>%
+    flextable::set_header_labels(term = "Term",  O_p.value = "O_p", R_p.valueN="R_p", changep = "Change.p", result_O_p.value_category = "Reproduce.p") %>%
+    flextable::add_footer_lines("O_p = original p-value; R_p = reproduced p-value; Changep = change in p-value R_p - O_p; Reproduce.p = p-values reproduced. SigChangeDirection = statistical significance and B change between original and reproduced models. Note, p-values that were <0.001 were set to 0.00099 for the purposes of comparison.") %>%
+    flextable::  colformat_double(digits = 3)
+  
+  assign_df(paste0("Cp_model_", model_num), Cp)
+}
+
+
+ #Function to create and assign the FF table
+create_ff_table <- function(fdat, model_num) {
+  FF <- fdat %>%
+    dplyr::filter(n == 1) %>%
+    dplyr::select(term, O_f, R_fN, Change.f, result_O_f_category) %>%
+    mutate(across(c(R_fN, Change.f), ~ Sround(.x, thresround))) %>% 
+    mutate(Change.f = ifelse(Change.f=="NA", "", Change.f)) %>% 
+    mutate(R_fN = ifelse(R_fN =="NA", "", R_fN)) %>% 
+    flextable::flextable() %>%
+    flextable::align(align = "left", part = "all") %>%
+    flextable::width(j = "result_O_f_category", width = 2.5) %>%
+    flextable::set_header_labels(
+      term = "Term",
+      O_f = "O_F",
+      R_fN = "R_F",
+      Change.f = "Change.F",
+      result_O_f_category = "Reproduce.F"
+    ) %>%
+    flextable::add_footer_lines("O_F = original global F; R_F = reproduced global F; Change.F = change in R_F - O_F; Reproduce.F = Global F reproduced.")
+  
+  assign_df(paste0("FF_model_", model_num), FF)
+}
+
+
+
+
+# Generate model outputs
+generate_model_outputs <- function(model_num) {
+  generate_forest_plot(model_num)
+  fdat <- get_dynamic_df(paste0("fdat", model_num))
+  generate_bland_altman_plot(fdat, model_num)
+  create_cc_table(fdat, model_num)
+  create_cl_table(fdat, model_num)
+  create_cu_table(fdat, model_num)
+  create_se_table(fdat, model_num)
+  create_t_table(fdat, model_num)
+  create_r2_table(fdat, model_num)
+  create_r2Adj_table(fdat, model_num)
+  create_ff_table(fdat, model_num)
+  create_df_table(fdat, model_num)
+  create_cp_table(fdat, model_num)
+}
+
+# Example list of model numbers (you can define this based on your actual models)
+model_numbers <- 1:num_models
+
+# Call the function for each model
+for (i in model_numbers) {
+  generate_model_outputs(i)
+}
+
+
+```
+
+```{r M1Rassump}
+
+R_description_raw1 <- R_description_flextable_1$body$dataset
+
+
+# Create an empty dataset for assumptions
+M1Rassump<- data.frame(matrix(nrow = nrow(O_anova_raw_df_1), ncol = 25))
+# Assign column names
+names(M1Rassump) <- c("paper_ID",  "Model", "origin", "n", "Term", "linearplot", "linear",  "homtest", "homplot", "hom",  "VIF", "KS", "SW", "QQ", "normal", 
+                      "collin", "indDes", "indtest", "indep", "R2", "cooks", "DFFIT", "DFbeta", "CovRatio", "Outlier") 
+
+
+M1Rassump<-M1Rassump %>% mutate(Model=1, origin="Reproduced", n=1:nrow(.))
+M1Rassump$paper_ID <- paper_ID
+M1lintest<-R_residuals_raw_df_1 %>% dplyr::select(n, Model, paper_ID,origin, Results) %>% rename("lineartest"="Results") %>% 
+  mutate(lineartest= case_when(lineartest== "Linearity violation" ~ "Violation", lineartest==  "No linearity violation"~ "No Violation", TRUE ~ NA_character_))
+M1Rassump <-merge(M1Rassump, M1lintest, by=c("paper_ID", "Model", "origin", "n"))
+M1colin<- R_collinearity_raw_df_1 %>%  add_row(.before = 1) %>% mutate(Model = 1, paper_ID = paper_ID, origin = "Reproduced", n=1:nrow(O_anova_raw_df_1)) %>% 
+  dplyr::select(vif, n, Model, paper_ID,origin) 
+M1colin$paper_ID <- paper_ID
+M1Rassump <-merge(M1Rassump, M1colin, by=c("paper_ID", "Model", "origin", "n"))
+M1Rassump$Term <- O_anova_raw_df_1$term[order(O_anova_raw_df_1$n)]
+
+# note some variables on a overall model level some at variable level, if this is the case n=1 is the overall model for example linearity. DFBeta is measured at coeffcient level but has been made to model level.
+M1Rassump<-M1Rassump %>%
+mutate(linear= case_when(n==1 | n==2 | n==3 | n==4  ~ "No Violation")) %>%   # not automatic based on overall information  
+mutate(homtest = ifelse(R_homoscedasticity_raw_df_1$p.value < 0.05, "Violation", "No Violation")) %>% 
+mutate(homplot = "Violation", hom="Violation") %>% # not automatic
+mutate(linearplot= case_when(n==1 | n==2 | n==3 | n==4  ~ "No Violation")) %>% # not automatic
+mutate(KS = ifelse(R_normality_ks_raw_df_1$p.value < 0.05, "Violation", "No Violation")) %>% 
+mutate(SW = ifelse(R_normality_sw_raw_df_1$p.value < 0.05, "Violation", "No Violation")) %>% 
+mutate(QQ = "Violation", normal="Violation") %>% # not automatic
+mutate(indtest = ifelse(R_independence_raw_df_1$p < 0.05, "Violation", "No Violation")) %>% 
+mutate(VIF = ifelse(vif < 5, "No Violation", "Violation")) %>% 
+mutate(collin = "No Violation") %>%  # not automatic based on overall information, including assessing SE if problem
+mutate(indDes = "No Violation", indep="No Violation") %>% # not automatic
+dplyr::select(-vif) %>%  
+mutate(R2 = "Wrong R2 reported") 
+
+
+DFbeta_table1 <- R_description_raw1 %>%
+  filter(str_starts(term, "dfb.")) %>%
+  mutate(
+    Term = str_remove(term, "^dfb\\."),
+    Term = if_else(Term == "1_", "Intercept", Term),
+    DFbeta = if_else(min <= -1 | max >= 1, "Yes", "No")
+  )%>% dplyr::select(Term, DFbeta)
+DFbeta_table1$Term<-R_coefficients_raw_df_1$term[!is.na(R_coefficients_raw_df_1$est)]
+
+
+
+M1Rassump$DFbeta <- if_else(
+  any(DFbeta_table1$DFbeta == "Yes", na.rm = TRUE),
+  "Yes",
+  "No"
+)
+
+M1Rassump <- M1Rassump |>
+  mutate(
+    cooks = if_else(flag_any(R_description_raw1, ".cooksd", max >= 0.5),
+                    "Yes", "No")) |>
+  mutate(DFFIT = if_else(
+      flag_any(R_description_raw1, "dffit", min <= -1 | max >= 1),
+      "Yes", "No"),
+    CovRatio = if_else(
+      flag_any(R_description_raw1, "cov.r", min <= 0.9 | max >= 1.1),
+      "Yes", "No"))|>
+  dplyr::mutate(
+    Outlier = if_else(
+      any(cooks == "Yes" | DFbeta == "Yes" | DFFIT == "Yes"),
+      "Yes", "No")) |> 
+  arrange(n)
+
+
+
+
+```
+
+```{r M2Rassump}
+R_description_raw2 <- R_description_flextable_2$body$dataset
+
+
+
+# Create an empty dataset for assumptions
+M2Rassump<- data.frame(matrix(nrow = nrow(O_anova_raw_df_2), ncol = 25))
+# Assign column names
+names(M2Rassump) <- c("paper_ID",  "Model", "origin", "n", "Term", "linearplot", "linear",  "homtest", "homplot", "hom",  "VIF", "KS", "SW", "QQ", "normal", 
+                      "collin", "indDes", "indtest", "indep", "R2", "cooks", "DFFIT", "DFbeta", "CovRatio", "Outlier")  
+
+
+M2Rassump<-M2Rassump %>% mutate(Model=2, origin="Reproduced",  n=1:nrow(.))
+M2Rassump$paper_ID <- paper_ID
+M2lintest<-R_residuals_raw_df_2 %>% dplyr::select(n, Model, paper_ID,origin, Results) %>% rename("lineartest"="Results") %>% 
+  mutate(lineartest= case_when(lineartest== "Linearity violation" ~ "Violation", lineartest==  "No linearity violation"~ "No Violation", TRUE ~ NA_character_))
+M2Rassump <-merge(M2Rassump, M2lintest, by=c("paper_ID", "Model", "origin", "n"))
+M2colin<- R_collinearity_raw_df_2 %>%  add_row(.before = 1) %>% mutate(Model = 2, paper_ID = paper_ID, origin = "Reproduced", n=1:nrow(O_anova_raw_df_2)) %>% 
+  dplyr::select(vif, n, Model, paper_ID,origin) 
+M2colin$paper_ID <- paper_ID
+M2Rassump <-merge(M2Rassump, M2colin, by=c("paper_ID", "Model", "origin", "n"))
+M2Rassump$Term <- O_anova_raw_df_2$term[order(O_anova_raw_df_2$n)]
+
+# note some variables on a overall model level some at variable level, if this is the case n=1 is the overall model for example linearity. DFBeta is measured at coeffcient level but has been made to model level.
+M2Rassump<-M2Rassump %>%
+mutate(linearplot= case_when(n==1 | n==2 | n==3 | n==4  ~ "No Violation")) %>% # not automatic
+mutate(linear= case_when(n==1 | n==2 | n==3 | n==4  ~ "No Violation")) %>%   # not automatic based on overall information  
+mutate(homtest = ifelse(R_homoscedasticity_raw_df_2$p.value < 0.05, "Violation", "No Violation")) %>% 
+mutate(homplot = "Violation", hom="Violation") %>% # not automatic
+mutate(KS = ifelse(R_normality_ks_raw_df_2$p.value < 0.05, "Violation", "No Violation")) %>% 
+mutate(SW = ifelse(R_normality_sw_raw_df_2$p.value < 0.05, "Violation", "No Violation")) %>% 
+mutate(QQ = "No Violation", normal="No Violation") %>% # not automatic
+mutate(indtest = ifelse(R_independence_raw_df_2$p < 0.05, "Violation", "No Violation")) %>% 
+mutate(VIF = ifelse(vif < 5, "No Violation", "Violation")) %>% 
+mutate(collin = "No Violation") %>%  # not automatic based on overall information, including assessing SE if problem
+mutate(indDes = "No Violation", indep="No Violation") %>% # not automatic
+dplyr::select(-vif) %>%  
+mutate(R2 = "Wrong R2 reported") 
+
+
+DFbeta_table2 <- R_description_raw2 %>%
+  filter(str_starts(term, "dfb.")) %>%
+  mutate(
+    Term = str_remove(term, "^dfb\\."),
+    Term = if_else(Term == "1_", "Intercept", Term),
+    DFbeta = if_else(min <= -1 | max >= 1, "Yes", "No")
+  )%>% dplyr::select(Term, DFbeta)
+DFbeta_table2$Term<-R_coefficients_raw_df_2$term[!is.na(R_coefficients_raw_df_2$est)]
+
+
+
+M2Rassump$DFbeta <- if_else(
+  any(DFbeta_table2$DFbeta == "Yes", na.rm = TRUE),
+  "Yes",
+  "No"
+)
+
+M2Rassump <- M2Rassump |>
+  mutate(
+    cooks = if_else(flag_any(R_description_raw2, ".cooksd", max >= 0.5),
+                    "Yes", "No")) |>
+  mutate(DFFIT = if_else(
+      flag_any(R_description_raw2, "dffit", min <= -1 | max >= 1),
+      "Yes", "No"),
+    CovRatio = if_else(
+      flag_any(R_description_raw2, "cov.r", min <= 0.9 | max >= 1.1),
+      "Yes", "No"))|>
+  dplyr::mutate(
+    Outlier = if_else(
+      any(cooks == "Yes" | DFbeta == "Yes" | DFFIT == "Yes"),
+      "Yes", "No")) |> arrange(n)
+
+ 
+
+```
+
+```{r M3Rassump}
+
+R_description_raw3 <- R_description_flextable_3$body$dataset
+# Create an empty dataset for assumptions
+M3Rassump<- data.frame(matrix(nrow = nrow(O_anova_raw_df_3), ncol = 25))
+# Assign column names
+names(M3Rassump) <- c("paper_ID",  "Model", "origin", "n", "Term", "linearplot", "linear",  "homtest", "homplot", "hom",  "VIF", "KS", "SW", "QQ", "normal", 
+                      "collin", "indDes", "indtest", "indep", "R2", "cooks", "DFFIT", "DFbeta", "CovRatio", "Outlier")
+
+
+M3Rassump<-M3Rassump %>% mutate(Model=3, origin="Reproduced",  n=1:nrow(.))
+M3Rassump$paper_ID <- paper_ID
+M3lintest<-R_residuals_raw_df_3 %>% dplyr::select(n, Model, paper_ID,origin, Results) %>% rename("lineartest"="Results") %>% 
+  mutate(lineartest= case_when(lineartest== "Linearity violation" ~ "Violation", lineartest==  "No linearity violation"~ "No Violation", TRUE ~ NA_character_))
+M3Rassump <-merge(M3Rassump, M3lintest, by=c("paper_ID", "Model", "origin", "n"))
+M3colin<- R_collinearity_raw_df_3 %>%  add_row(.before = 1) %>% mutate(Model = 3, paper_ID = paper_ID, origin = "Reproduced", n=1:nrow(O_anova_raw_df_3)) %>% 
+  dplyr::select(vif, n, Model, paper_ID,origin) 
+M3colin$paper_ID <- paper_ID
+M3Rassump <-merge(M3Rassump, M3colin, by=c("paper_ID", "Model", "origin", "n"))
+M3Rassump$Term <- O_anova_raw_df_3$term[order(O_anova_raw_df_3$n)]
+
+# note some variables on a overall model level some at variable level, if this is the case n=1 is the overall model for example linearity. DFBeta is measured at coeffcient level but has been made to model level.
+M3Rassump<-M3Rassump %>%
+mutate(linearplot= case_when(n==1 | n==2  | n==3  ~ "Violation", n==4 ~ "No Violation")) %>% # not automatic
+mutate(linear= case_when(n==1 | n==2  | n==3  ~ "Violation", n==4 ~ "No Violation")) %>%   # not automatic based on overall information  
+mutate(homtest = ifelse(R_homoscedasticity_raw_df_3$p.value < 0.05, "Violation", "No Violation")) %>% 
+mutate(homplot = "Violation", hom="Violation") %>% # not automatic
+mutate(KS = ifelse(R_normality_ks_raw_df_3$p.value < 0.05, "Violation", "No Violation")) %>% 
+mutate(SW = ifelse(R_normality_sw_raw_df_3$p.value < 0.05, "Violation", "No Violation")) %>% 
+mutate(QQ = "No Violation", normal="No Violation") %>% # not automatic
+mutate(indtest = ifelse(R_independence_raw_df_3$p < 0.05, "Violation", "No Violation")) %>% 
+mutate(VIF = ifelse(vif < 5, "No Violation", "Violation")) %>% 
+mutate(collin = "No Violation") %>%  # not automatic based on overall information, including assessing SE if problem
+mutate(indDes = "No Violation", indep="No Violation") %>% # not automatic
+dplyr::select(-vif) %>%  
+mutate(R2 = "Wrong R2 reported") 
+
+DFbeta_table3 <- R_description_raw3 %>%
+  filter(str_starts(term, "dfb.")) %>%
+  mutate(
+    Term = str_remove(term, "^dfb\\."),
+    Term = if_else(Term == "1_", "Intercept", Term),
+    DFbeta = if_else(min <= -1 | max >= 1, "Yes", "No")
+  )%>% dplyr::select(Term, DFbeta)
+DFbeta_table3$Term<-R_coefficients_raw_df_3$term[!is.na(R_coefficients_raw_df_3$est)]
+
+
+
+M3Rassump$DFbeta <- if_else(
+  any(DFbeta_table3$DFbeta == "Yes", na.rm = TRUE),
+  "Yes",
+  "No"
+)
+
+M3Rassump <- M3Rassump |>
+  mutate(
+    cooks = if_else(flag_any(R_description_raw3, ".cooksd", max >= 0.5),
+                    "Yes", "No")) |>
+  mutate(DFFIT = if_else(
+      flag_any(R_description_raw3, "dffit", min <= -1 | max >= 1),
+      "Yes", "No"),
+    CovRatio = if_else(
+      flag_any(R_description_raw3, "cov.r", min <= 0.9 | max >= 1.1),
+      "Yes", "No")) |>
+  dplyr::mutate(
+    Outlier = if_else(
+      any(cooks == "Yes" | DFbeta == "Yes" | DFFIT == "Yes"),
+      "Yes", "No")) |> arrange(n)
+
+
+
+
+```
+
+# Model 1
+
+::: panel-tabset
+### Original results
+
+##### Model results for `r namey1`
+
+```{r, ft.align="left"}
+O_coefficients_flextable_1
+```
+
+##### Fit statistics for `r namey1`
+
+```{r, ft.align="left"}
+O_fit_stats_flextable_1
+```
+
+##### ANOVA table for `r namey1`
+
+```{r, ft.align="left"}
+O_anova_flextable_1
+```
+
+### Reproduced results
+
+##### Model results for `r namey1`
+
+```{r, ft.align="left"}
+R_coefficients_flextable_1
+```
+
+##### Fit statistics for `r namey1`
+
+```{r, ft.align="left"}
+R_fit_stats_flextable_1
+```
+
+##### ANOVA table for `r namey1`
+
+```{r, ft.align="left"}
+R_anova_flextable_1
+
+```
+
+##### Visualisation of regression model
+
+The blue line shows the best line of fit with shading representing 95% confidence intervals, while holding all other covariates constant. The dots show partial residuals, which reflect the observed data adjusted for all other predictors except the one being plotted.
+
+```{r, out.width = "100%", out.height="100%"}
+knitr::include_graphics('figures/reg_plot_1.png') 
+```
+
+##### Checking residuals plots for patterns
+
+Blue line showing quadratic fit for residuals
+
+```{r , out.width = "100%", out.height="100%"}
+knitr::include_graphics('figures/res_plot_1.png') 
+```
+
+##### Testing residuals for non linear relationships
+
+```{r, ft.align="left"}
+R_residuals_flextable_1
+```
+
+##### Checking univariate relationships with the dependent variable using scatterplots
+
+Blue line shows linear relationship, red line indicates relationship inferred by GAM modelling
+
+```{r, out.width = "80%", out.height="80%"}
+knitr::include_graphics('figures/scatter_plot_1.png') 
+```
+
+##### Linearity results
+
+-   `r linyes`
+
+##### Testing for homoscedasticity
+
+```{r, ft.align="left"}
+R_homoscedasticity_flextable_1
+```
+
+##### Homoscedasticity results
+
+-   `r ifelse(R_homoscedasticity_raw_df_1$p.value[1] < 0.05, "The studentized Breusch-Pagan test indicates heteroscedasticity.", "The studentized Breusch-Pagan test supports homoscedasticity.")`
+-   `r somehet`
+
+##### Model descriptives including cook's distance and leverage to understand outliers
+
+```{r, ft.align="left"}
+R_description_flextable_1
+
+```
+
+##### Cooks threshold
+
+Cook's distance measures the overall change in fit, if the *ith* observation is removed. Potential influential observations are identified by $\text{Cook's Distance}_i > \frac{4}{n}$, where *n* is the number of observations. In practice a threshold of 0.5 to 1 is often used to identify influential observations.
+
+```{r, out.width = "80%", out.height="80%"}
+
+knitr::include_graphics('figures/cooks_threshold_1.png')
+```
+
+##### DFFIT threshold
+
+DFFIT measures how many standard deviations the fitted values will change when the *ith* observation is removed. Potential influential observations $\left| \text{DFFITS}_i \right| > \frac{2\sqrt{p}}{\sqrt{n}}$ where *p* is the number of predictors (including the intercept) and *n* is the number of observations. In practice this can result in a large number of points identified, a practical cut-off of 1 was used to flag observations with meaningful impact.
+
+```{r, out.width = "80%", out.height="80%"}
+knitr::include_graphics('figures/dffit_threshold_1.png')
+
+```
+
+##### DFBETA threshold
+
+DFBETAS quantify the influence of the *ith* observation on the *jth* regression coefficient as the change in that coefficient when the observation is omitted, expressed in units of the coefficient’s estimated standard error. There is a DFBETA for each parameter in the model. Potential influential observations $|\text{DFBETA}_{ij}| > \frac{2}{\sqrt{n}}$, where *n* is the number of observations. In larger datasets, this threshold can flag a high number of observations with only minor influence on the model. A practical cut-off of 1 was used to flag observations with meaningful impact.
+
+```{r, out.width = "100%", out.height="100%"}
+knitr::include_graphics('figures/dbetas_threshold_1.png') 
+
+```
+
+##### Influence plot
+
+Observations with high leverage (horizontal) and large residuals (vertical, typically at ±2 or ±3 studentized residuals) are concerning, as they may disproportionately influence the model. This combination is reflected by large bubbles with high Cook's distance indicated by darker shadings of blue.
+
+```{r, out.width = "100%", out.height="100%"}
+knitr::include_graphics('figures/cooks_plots_1.png') 
+
+```
+
+##### COVRATIO plot
+
+COVRATIO measures the overall change in the precision (covariance matrix) of the estimated regression coefficients when the ith observation is removed. Values close to 1 indicate little influence on the model’s precision. Values below 1 suggest that an observation inflates the variances and reduces precision, resulting in wider confidence intervals, whereas values above 1 suggest deflated variances and narrower confidence intervals. A commonly cited guideline is $\left|\mathrm{COVRATIO}_i - 1\right| > \frac{3p}{n}$, where *p* is the number of parameters and *n* is the number of observations. A practical cut-off between 0.9 to 1.1 was used to flag observations with meaningful impact on precision, although there is no agreed universal alternative cut-off.
+
+```{r, out.width = "100%", out.height="100%"}
+knitr::include_graphics('figures/covratio_plot_1.png') 
+
+```
+
+##### Observations of interest identified by the influence plot
+
+```{r, ft.align="left"}
+
+ R_cooks_distance_flextable_1
+```
+
+##### Results for outliers and influential points
+
+-   Two observations had studentized residuals \> 3. Both had low leverage and small Cook’s distance, with DFBETAS and DFFITS within conventional ranges. The COVRATIO indicated observations that may affect confidence intervals widths.
+
+##### Checking for normality of the residuals using a Q–Q plot
+
+```{r, out.width = "80%", out.height="80%"}
+knitr::include_graphics('figures/qq_plot_1.png') 
+```
+
+##### Normality of residuals using Shapiro-Wilk and Kolmogorov-Smirnov tests
+
+```{r, ft.align="left"}
+R_normality_ks_flextable_1
+```
+
+```{r, ft.align="left"}
+R_normality_sw_flextable_1
+```
+
+##### Normality results
+
+-   `r ifelse(R_normality_ks_raw_df_1$p.value[1] < 0.05, "The Kolmogorov-Smirnov test indicates residuals may not be normally distributed.", "The Kolmogorov-Smirnov supports residuals being normally distributed.")`
+-   `r ifelse(R_normality_sw_raw_df_1$p.value[1] < 0.05, "The Shapiro-Wilk normality test indicates residuals may not be normally distributed.", "The Shapiro-Wilk supports residuals being normally distributed.")`
+-   `r notnormalQ`
+
+##### Assessing collinearity with VIF
+
+```{r,  ft.align="left"}
+R_collinearity_flextable_1
+
+```
+
+##### Collinearity results
+
+-   `r as.character(printvif(R_collinearity_raw_df_1$vif))`
+-   `r vifnoprob`
+
+##### Assessing independence with the Durbin–Watson test for autocorrelation
+
+```{r, ft.align="left"}
+R_independence_flextable_1
+```
+
+##### Independence results
+
+-   `r ifelse(R_independence_raw_df_1$p[1] < 0.05, "The Durbin–Watson test suggests there are auto-correlation issues.", "The Durbin–Watson test suggests there are no auto-correlation issues.")`
+-   `r indDesYes`
+
+##### Assumption conclusions
+
+No meaningful departures from the assumptions of linearity and independence were observed. While the Breusch-Pagan test was not statistically significant, the residuals vs. fitted plot showed a funnel shape, suggesting heteroscedasticity and a sensitivity analysis using weighted or robust regression is recommended. Normality tests and the Q-Q plot indicated the residuals may not be normally distributed. Outlier diagnostics indicated that point estimates were unlikely to be substantially affected by influential points, but confidence-interval width could be affected and should be further investigated.
+
+### Differences
+
+##### Forest plot showing original and reproduced coefficients and 95% confidence intervals for `r namey1`
+
+```{r}
+knitr::include_graphics('figures/forest_plot_model_1.png')
+
+```
+
+##### Change in regression coefficients
+
+```{r, ft.align="left"}
+
+CC_model_1
+```
+
+##### Change in lower 95% confidence intervals for coefficients
+
+```{r, ft.align="left"}
+
+
+CL_model_1
+```
+
+##### Change in upper 95% confidence intervals for coefficients
+
+```{r, ft.align="left"}
+
+CU_model_1
+```
+
+##### Change in R^2^
+
+```{r, ft.align="left"}
+R2_model_1
+
+```
+
+##### Change in global F
+
+```{r, ft.align="left"}
+
+FF_model_1
+```
+
+##### Change in degrees of freedom
+
+```{r, ft.align="left"}
+DF_model_1
+```
+
+##### Change in p-values
+
+```{r, ft.align="left"}
+Cp_model_1
+```
+
+##### Bland Altman plot showing differences between original and reproduced p-values for `r namey1`
+
+```{r out.width = "80%", out.height="80%"}
+knitr::include_graphics('figures/bland_altman_plot_model_1.png')
+
+```
+
+##### Results for p-values
+
+-   `r p_repro`
+
+#### Conclusion computational reproducibility
+
+`r MostCompRep`
+
+### Sensitivity analysis
+
+#### Methods
+
+The model was successfully reproduced; however, there were indications that the residuals may not be normally distributed and may exhibit slight heteroscedasticity. To further verify the findings, bootstrapped standardized regression coefficients and their 95% confidence intervals were examined. Percentage and absolute changes in estimates and confidence-interval bounds relative to the linear model were summarised using thresholds of 10% change and standardized coefficient differences of \<0.10 and \<0.20. Coefficient direction and statistical significance were assessed for consistency. Wild bootstrapping was used to account for potential heteroscedasticity.
+
+#### Results
+
+```{r}
+
+dat <- dat |> 
+  mutate(across(c(IIP32_Total, DERS, QIDS_SR, CEA, CPA, CSA), ~ as.numeric(scale(.)), .names = "z_{.col}"))
+model_ols <- lm(z_QIDS_SR ~ z_CEA + z_CPA+ z_CSA, data = dat)
+model_ols_glance<-glance(model_ols)
+ols_table <- tbl_regression(model_ols,  intercept = TRUE) 
+
+
+
+Mod <- model_ols %>%
+  tidy(conf.int = TRUE) %>%
+  rename(Term = term, B = estimate, SE = std.error, Lower = conf.low, Upper = conf.high) %>%
+  mutate(Term = ifelse(Term == "(Intercept)", "Intercept", Term)) %>% select(Term, B, Lower, Upper, p.value )
+
+
+
+set.seed(172635)
+
+WildObj <- wild.boot(z_QIDS_SR ~ z_CEA + z_CPA + z_CSA, data = dat, B = 10000) 
+
+# Extract all bootstrap estimates,
+B <- colMeans(WildObj$bootEstParam)  # Compute mean of bootstrap estimates
+
+boot_ci_df <- data.frame(
+  Term = colnames(WildObj$bootEstParam),  
+  boot.B = colMeans(WildObj$bootEstParam),  
+  boot.SE = apply(WildObj$bootEstParam, 2, sd),  
+  boot.Lower = apply(WildObj$bootEstParam, 2, quantile, probs = 0.025),
+  boot.Upper = apply(WildObj$bootEstParam, 2, quantile, probs = 0.975)
+) %>% 
+  mutate(Term = ifelse(Term == "(Intercept)", "Intercept", Term)) %>% 
+  mutate(`p-value` = 2 * (1 - pnorm(abs(boot.B / boot.SE)))) %>% select(-boot.SE) 
+
+boot_df <- as.data.frame(WildObj$bootEstParam)
+
+
+orig_est <- as.numeric(WildObj$origEstParam)
+names(orig_est) <- colnames(boot_df)
+
+orig_df <- data.frame(
+  Term = names(orig_est),
+  Orig_Estimate = orig_est
+)
+
+
+
+boot.dist1 <- boot_df |>
+  pivot_longer(cols = everything(), names_to = "Term", values_to = "Estimate") |>
+  left_join(orig_df, by = "Term") |>
+  ggplot(aes(x = Estimate)) +
+  geom_histogram(bins = 40, fill = "steelblue", color = "white") +
+  geom_vline(aes(xintercept = Orig_Estimate), color = "red", linetype = "dashed", linewidth = 1) +
+  facet_wrap(~ Term, scales = "free_y", ncol = 1) +
+  theme_minimal() +
+  labs(
+    title = "Wild Bootstrap Distributions of Coefficients",
+    x = "Bootstrapped Estimates",
+    y = "Frequency"
+  )
+
+
+ggsave("figures/boot.dist1.png", plot = boot.dist1, width = 8, height = 6, dpi = 300)
+
+
+
+# Merge Type III SS OLS and Bootstrap results
+comparison1 <- left_join(Mod, boot_ci_df, by = "Term") %>%
+  mutate(
+   # Compute absolute coefficient change
+    A_B_change = (B - boot.B),
+    A_B_pct_change =  pmax(pmin(round((A_B_change / abs(B)) * 100, 2), 1000),-1000),
+
+    # Compute absolute changes in CI bounds
+    A_lower_change = (Lower - boot.Lower),
+    A_upper_change = (Upper - boot.Upper),
+
+    # Compute percentage changes in CI bounds
+    A_lower_pct_change = round((A_lower_change / abs(Lower)) * 100, 2),
+    A_upper_pct_change =  pmax( pmin(round((A_upper_change / abs(Upper)) * 100, 2), 1000),-1000),
+
+    # Compute OLS and Bootstrap CI widths
+    A_range_ols = (Upper - Lower),  
+    A_range_boot = (boot.Upper - boot.Lower),  
+    A_range_change = (A_range_boot - A_range_ols),
+    A_range_pct_change =  pmax( pmin(round((A_range_change / A_range_ols) * 100, 2), 1000),-1000),
+
+    # Flag changes 
+     B_Diff_0.1 = ifelse(abs(A_B_change) >= 0.1, "Yes", "No"),
+    Lower_Diff_0.1 = ifelse(abs(A_lower_change) >= 0.1, "Yes", "No"),
+    Upper_Diff_0.1 = ifelse(abs(A_upper_change) >= 0.1, "Yes", "No"),
+    Range_Diff_0.1 = ifelse(abs(A_range_change) >= 0.1, "Yes", "No"),
+    B_Diff_0.2 = ifelse(abs(A_B_change) >= 0.2, "Yes", "No"),
+    Lower_Diff_0.2 = ifelse(abs(A_lower_change) >= 0.2, "Yes", "No"),
+    Upper_Diff_0.2 = ifelse(abs(A_upper_change) >= 0.2, "Yes", "No"),
+    Range_Diff_0.2 = ifelse(abs(A_range_change) >=0.2, "Yes", "No"),
+    
+    B_10pct = ifelse(abs(A_B_pct_change) >= 10, "Yes", "No"),
+    Lower_10pct = ifelse(abs(A_lower_pct_change) >= 10, "Yes", "No"),
+    Upper_10pct = ifelse(abs(A_upper_pct_change) >= 10, "Yes", "No"),
+    Range_10pct = ifelse(abs(A_range_pct_change) >= 10, "Yes", "No"),
+                changep = p.value - `p-value`,
+        SigChange = case_when(
+      p.value < 0.05 & `p-value` < 0.05 ~ "Remains significant",
+      p.value >= 0.05 & `p-value` >= 0.05 ~ "Remains non-sig",
+      p.value < 0.05 & `p-value` >= 0.05 ~ "Change from sig to non-sig",
+      p.value >= 0.05 & `p-value` < 0.05 ~ "Change from non-sig to sig"),
+    SigChangeDirection = case_when(
+      p.value < 0.05 & `p-value` < 0.05 & (sign(B) != sign(boot.B)) ~ "Remains sig, B changes direction",
+      p.value < 0.05 & `p-value` < 0.05 & (sign(B) == sign(boot.B)) ~ "Remains sig, B same direction",
+      p.value>= 0.05 & `p-value` < 0.05 & (sign(B) == sign(boot.B) | sign(B) != sign(boot.B)) ~ "Non-sig to sig, B same direction",
+      p.value < 0.05 & `p-value` >= 0.05 & (sign(B) != sign(boot.B) | sign(B) == sign(boot.B)) ~ "Sig to non-sig, B changes direction",
+      p.value >= 0.05 & `p-value` >= 0.05 & (sign(B) != sign(boot.B)) ~ "Remains non-sig, B changes direction",
+      p.value >= 0.05 & `p-value` >= 0.05 & (sign(B) == sign(boot.B)) ~ "Remains non-sig, B same direction",
+      TRUE ~ NA_character_)) %>%
+  select(
+    Term,
+    B, boot.B, A_B_change, A_B_pct_change, B_10pct, B_Diff_0.1, B_Diff_0.2,
+    Lower, boot.Lower, A_lower_change, A_lower_pct_change, Lower_10pct, Lower_Diff_0.1, Lower_Diff_0.2,
+    Upper, boot.Upper, A_upper_change, A_upper_pct_change, Upper_10pct, Upper_Diff_0.1, Upper_Diff_0.2,
+    A_range_ols, A_range_boot, A_range_change, A_range_pct_change,  Range_10pct,
+      Range_Diff_0.1, Range_Diff_0.2, p.value, "p-value", changep, SigChange, SigChangeDirection) 
+
+
+
+
+beta1<- comparison1 %>% select(Term, B, boot.B, A_B_change, A_B_pct_change, B_10pct, B_Diff_0.1, B_Diff_0.2) %>%
+   mutate(A_B_pct_change = as.numeric(A_B_pct_change), A_B_pct_change = case_when(A_B_pct_change > 10000 ~ NA_real_, TRUE ~ A_B_pct_change)) %>% flextable %>% autofit %>% 
+set_header_labels(A_B_change = "B_diff", A_B_pct_change = "%_Diff",  B_10pct="Diff_10%" ,   B_Diff_0.1 = "Diff_0.1", B_Diff_0.2 = "Diff_0.2" ) %>%
+              colformat_double(digits = thresround) %>%  
+  flextable::add_footer_lines("B =  standardized regression coefficient reproduced B; boot.B =  boostrapped standardized reproduced B; B_diff = change in B - boot.B; %_Diff = percentage difference, percentage changes were truncated at ±1000%; Diff_10% =  difference ≥10% ; Diff_0.1 and Diff_0.2  =  absolute difference ≥0.1 and ≥0.2, respectively.") 
+
+lower1<- comparison1 %>% select(Term, Lower, boot.Lower, A_lower_change, A_lower_pct_change, Lower_10pct, Lower_Diff_0.1, Lower_Diff_0.2) %>% flextable %>% autofit %>% 
+set_header_labels(A_lower_change = "Lower_diff", A_lower_pct_change = "%_Diff", Lower_10pct = "Diff_10%",  Lower_Diff_0.1 = "Diff_0.1",  Lower_Diff_0.2 = "Diff_0.2") %>%
+              colformat_double(digits = thresround)  %>%  
+  flextable::add_footer_lines("Lower =  standardized reproduced lower CI; boot.Lower =  boostrapped standardized reproduced lower CI; Lower_diff = change in Lower - boot.Lower; %_change = percentage difference, percentage changes were truncated at ±1000%; Diff_10% =  difference ≥10% ; Diff_0.1 and Diff_0.2  =  absolute difference ≥0.1 and ≥0.2, respectively." ) 
+
+upper1<- comparison1 %>% select(Term, Upper, boot.Upper, A_upper_change, A_upper_pct_change, Upper_10pct, Upper_Diff_0.1, Upper_Diff_0.2) %>% flextable %>% autofit %>% 
+set_header_labels(A_upper_change = "Upper_diff", A_upper_pct_change = "%_Diff", Upper_10pct ="Diff_10%", Upper_Diff_0.1 = "Diff_0.1", Upper_Diff_0.2 = "Diff_0.2") %>%
+              colformat_double(digits = thresround) %>%  
+  flextable::add_footer_lines("Upper =  standardized reproduced upper CI; boot.Upper =  boostrapped standardized reproduced upper CI; Upper_diff = change in Upper - boot.Upper; %_change = percentage difference, percentage changes were truncated at ±1000%; Diff_10% =  difference ≥10% ; Diff_0.1 and Diff_0.2  =  absolute difference ≥0.1 and ≥0.2, respectively." ) 
+
+range1<- comparison1 %>% select(Term, A_range_ols, A_range_boot, A_range_change, A_range_pct_change, Range_10pct, Range_Diff_0.1, Range_Diff_0.2) %>% flextable %>% autofit %>% 
+set_header_labels(A_range_ols ="Range", A_range_boot="boot.Range", A_range_change = "Range_Diff" ,  A_range_pct_change="%_Diff", Range_10pct="Diff_10%", Range_Diff_0.1="Diff_0.1", Range_Diff_0.2="Diff_0.2") %>%
+              colformat_double(digits = thresround) %>%  
+  flextable::add_footer_lines("Range =  standardized reproduced CI range; boot.B =  boostrapped standardized reproduced CI range; Range_diff = change in CI Range ; %_change = percentage difference, Diff_10% =  difference ≥10% ; Diff_0.1 and Diff_0.2  =  absolute difference ≥0.1 and ≥0.2, respectively.") 
+
+
+
+p.val1<- comparison1 %>% select(Term, p.value, "p-value", changep,SigChangeDirection) %>%
+  mutate(p.value = sapply(p.value, round_p)) %>% mutate(`p-value` = sapply(`p-value`, round_p)) %>%flextable %>% autofit %>% set_header_labels(p.value ="p-value", "p-value"="boot.p-value") %>% 
+              colformat_double(digits = thresround) %>%  
+  flextable::add_footer_lines("p-value =  standardized reproduced p-value; boot.p-value =  boostrapped standardized reproduced p-value; changep = change in p-value - boot.p-value; SigChangeDirection =  statistical significance and B change between reproduced and bootstrapped model.") 
+
+
+```
+
+#### Bootstrapped results
+
+Wild bootstrapping was performed with 10,000 iterations.
+
+##### Change in regression coefficients
+
+```{r, ft.align="left"}
+beta1
+```
+
+##### Change in lower 95% confidence interval
+
+```{r, ft.align="left"}
+
+lower1
+
+```
+
+##### Change in upper 95% confidence interval
+
+```{r, ft.align="left"}
+upper1
+```
+
+##### Change in Range of 95% confidence interval
+
+```{r, ft.align="left"}
+range1
+
+```
+
+##### Change in p-value significance and regression coefficient direction
+
+```{r, ft.align="left"}
+p.val1
+```
+
+##### Check the distribution of bootstrap estimates
+
+The bootstrap distribution of each coefficient appeared approximately normal and centered near the original estimate (red dashed line), suggesting that the estimates are relatively stable. No strong skewness or multimodality was observed.
+
+```{r}
+knitr::include_graphics('figures/boot.dist1.png')
+
+```
+
+#### Conclusions based on the bootstrapped model
+
+This model was inferentially reproducible. While some statistics changed by 10% or more, these differences were not meaningful, with a change in standardized regression coefficients of less than 0.1. The direction of effects and statistical significance remained consistent between the reproduced and bootstrapped models.
+:::
+
+# Model 2
+
+::: panel-tabset
+### Original results
+
+##### Model results for `r namey2`
+
+```{r, ft.align="left"}
+O_coefficients_flextable_2
+
+```
+
+##### Fit statistics for `r namey2`
+
+```{r, ft.align="left"}
+O_fit_stats_flextable_2
+
+```
+
+##### ANOVA table for `r namey2`
+
+```{r,ft.align="left"}
+O_anova_flextable_2
+```
+
+### Reproduced results
+
+##### Model results `r namey2`
+
+```{r , ft.align="left"}
+
+R_coefficients_flextable_2
+```
+
+##### Model fit for `r namey2`
+
+```{r, ft.align="left"}
+R_fit_stats_flextable_2
+```
+
+##### ANOVA table for `r namey2`
+
+```{r, ft.align="left"}
+
+R_anova_flextable_2
+```
+
+##### Visualisation of regression model
+
+The blue line shows the best line of fit with shading representing 95% confidence intervals, while holding all other covariates constant. The dots show partial residuals, which reflect the observed data adjusted for all other predictors except the one being plotted.
+
+```{r, out.width = "80%", out.height="80%"}
+knitr::include_graphics('figures/reg_plot_2.png') 
+
+```
+
+##### Checking residuals plots for patterns
+
+Blue line showing quadratic fit for residuals
+
+```{r, out.width = "100%", out.height="100%"}
+knitr::include_graphics('figures/res_plot_2.png') 
+
+```
+
+##### Testing residuals for non linear relationships
+
+```{r, ft.align="left"}
+R_residuals_flextable_2
+
+```
+
+##### Checking univariate relationships with the dependent variable using scatterplots
+
+Blue line shows linear relationship, red line indicates relationship inferred by GAM modelling
+
+```{r, out.width = "80%", out.height="80%"}
+knitr::include_graphics('figures/scatter_plot_2.png') 
+
+```
+
+##### Linearity results
+
+`r linyes`
+
+##### Testing for homoscedasticity
+
+```{r, ft.align="left"}
+R_homoscedasticity_flextable_2
+```
+
+##### Homoscedasticity results
+
+-   `r ifelse(R_homoscedasticity_raw_df_2[1] < 0.05, "The studentized Breusch-Pagan test indicates heteroscedasticity.", "The studentized Breusch-Pagan test supports homoscedasticity.")`
+-   `r somehet`
+
+##### Model descriptives including cook's distance and leverage to understand outliers
+
+```{r, ft.align="left"}
+R_description_flextable_2
+
+```
+
+##### Cooks threshold
+
+Cook's distance measures the overall change in fit, if the *ith* observation is removed. Potential influential observations are identified by $\text{Cook's Distance}_i > \frac{4}{n}$, where *n* is the number of observations. In practice a threshold of 0.5 to 1 is often used to identify influential observations.
+
+```{r, out.width = "80%", out.height="80%"}
+
+knitr::include_graphics('figures/cooks_threshold_2.png')
+```
+
+##### DFFIT threshold
+
+DFFIT measures how many standard deviations the fitted values will change when the *ith* observation is removed. Potential influential observations $\left| \text{DFFITS}_i \right| > \frac{2\sqrt{p}}{\sqrt{n}}$ where *p* is the number of predictors (including the intercept), and *n* is the number of observations. In practice, this can result in a large number of points identified, a practical cut-off of 1 was used to flag observations with meaningful impact.
+
+```{r, out.width = "80%", out.height="80%"}
+knitr::include_graphics('figures/dffit_threshold_2.png')
+
+```
+
+##### DFBETA threshold
+
+DFBETAS quantify the influence of the *ith* observation on the *jth* regression coefficient as the change in that coefficient when the observation is omitted, expressed in units of the coefficient’s estimated standard error. There is a DFBETA for each model parameter. Potential influential observations $|\text{DFBETA}_{ij}| > \frac{2}{\sqrt{n}}$, where *n* is the number of observations. In larger datasets, this threshold can flag a high number of observations with only minor influence on the model. A practical cut-off of 1 was used to flag observations with meaningful impact.
+
+```{r, out.width = "100%", out.height="100%"}
+knitr::include_graphics('figures/dbetas_threshold_2.png') 
+
+```
+
+##### Influence plot
+
+Observations with high leverage (horizontal) and large residuals (vertical, typically at ±2 or ±3 studentized residuals) are concerning, as they may disproportionately influence the model. This combination is reflected by large bubbles with high Cook's distance indicated by darker shadings of blue.
+
+```{r, out.width = "100%", out.height="100%"}
+knitr::include_graphics('figures/cooks_plots_2.png') 
+
+```
+
+##### COVRATIO plot
+
+COVRATIO measures the overall change in the precision (covariance matrix) of the estimated regression coefficients when the ith observation is removed. Values close to 1 indicate little influence on the model’s precision. Values below 1 suggest that an observation inflates the variances and reduces precision, resulting in wider confidence intervals, whereas values above 1 suggest deflated variances and narrower confidence intervals. A commonly cited guideline is $\left|\mathrm{COVRATIO}_i - 1\right| > \frac{3p}{n}$, where *p* is the number of parameters and *n* is the number of observations. A practical cut-off between 0.9 to 1.1 was used to flag observations with meaningful impact on precision, although there is no agreed universal alternative cut-off.
+
+```{r, out.width = "100%", out.height="100%"}
+knitr::include_graphics('figures/covratio_plot_2.png') 
+
+```
+
+##### Observations of interest identified by the influence plot
+
+```{r, ft.align="left"}
+ R_cooks_distance_flextable_2
+```
+
+##### Results for outliers and influential points
+
+-   Although three observations exhibited relatively higher Cook’s distances, all remained below 0.5. DFBETAS and DFFITS were within acceptable limits, suggesting minimal influence on model estimates. Several observations had COVRATIO values \> 1, implying that their removal might reduce standard errors and narrow confidence intervals.
+
+##### Checking for normality of the residuals using a Q–Q plot
+
+```{r, out.width = "80%", out.height="80%"}
+knitr::include_graphics('figures/qq_plot_2.png') 
+```
+
+##### Normality of residuals using Shapiro-Wilk and Kolmogorov-Smirnov tests
+
+```{r, ft.align="left"}
+R_normality_ks_flextable_2
+R_normality_sw_flextable_2
+```
+
+##### Normality results
+
+-   `r ifelse(R_normality_ks_raw_df_2$p.value[1] < 0.05, "The Kolmogorov-Smirnov test indicates residuals may not be normally distributed.", "The Kolmogorov-Smirnov supports residuals being normally distributed.")`
+-   `r ifelse(R_normality_sw_raw_df_2$p.value[1] < 0.05, "The Shapiro-Wilk normality test indicates residuals may not be normally distributed.", "The Shapiro-Wilk supports residuals being normally distributed.")`
+-   `r normalQ`
+
+##### Assessing collinearity with VIF
+
+```{r,  ft.align="left"}
+R_collinearity_flextable_2
+```
+
+##### Collinearity results
+
+-   `r as.character(printvif(R_collinearity_raw_df_2$vif))`
+-   `r vifnoprob`
+
+##### Assessing independence with the Durbin–Watson test for autocorrelation
+
+```{r, ft.align="left"}
+R_independence_flextable_2
+```
+
+##### Independence results
+
+-   `r ifelse(R_independence_raw_df_2$p[1] < 0.05, "The Durbin–Watson test suggests there are auto-correlation issues.", "The Durbin–Watson test suggests there are no auto-correlation issues.")`
+-   `r indDesYes`
+
+##### Assumption conclusions
+
+No meaningful departures from the assumptions of linearity, normality, or independence were observed. No substantial outliers were identified, although a few points may influence confidence intervals. While the model was not statistically heteroscedastic, visual inspection suggested mild heteroscedasticity that may warrant further examination.
+
+### Differences
+
+##### Forest plot showing Original and Reproduced coefficients and 95% confidence intervals for `r namey2`
+
+```{r}
+knitr::include_graphics('figures/forest_plot_model_2.png')
+
+```
+
+##### Change in regression coefficients
+
+```{r, ft.align="left"}
+CC_model_2
+```
+
+##### Change in lower 95% confidence intervals for coefficients
+
+```{r, ft.align="left"}
+CL_model_2
+
+```
+
+##### Change in upper 95% confidence intervals for coefficients
+
+```{r, ft.align="left"}
+
+CU_model_2
+
+```
+
+##### Change in R^2^
+
+```{r, ft.align="left"}
+R2_model_2
+```
+
+##### Change in global F
+
+```{r, ft.align="left"}
+FF_model_2
+```
+
+##### Change in degrees of freedom
+
+```{r, ft.align="left"}
+DF_model_2
+```
+
+##### Change in p-values
+
+```{r, ft.align="left"}
+Cp_model_2
+```
+
+##### Bland Altman plot showing differences between original and reproduced p-values for `r namey2`
+
+```{r}
+knitr::include_graphics('figures/bland_altman_plot_model_2.png')
+
+```
+
+##### Results for p-values
+
+-   `r p_repro`
+
+#### Conclusion computational reproducibility
+
+`r MostCompRep` With one error identified for the lower confidence interval of CSA, which was missing a negative sign.
+
+### Sensitivity analysis
+
+#### Methods
+
+The model was successfully reproduced; however, it may exhibit slight heteroscedasticity. To further verify the findings, bootstrapped standardized regression coefficients and their 95% confidence intervals were examined. Percentage and absolute changes in estimates and confidence-interval bounds relative to the linear model were summarised using thresholds of 10% change and standardized coefficient differences of \<0.10 and \<0.20. Coefficient direction and statistical significance were assessed for consistency. Wild bootstrapping was used to account for potential heteroscedasticity.
+
+#### Results
+
+```{r}
+
+
+model_ols <- lm(z_DERS~ z_CEA + z_CPA+ z_CSA, data = dat)
+model_ols_glance<-glance(model_ols)
+ols_table <- tbl_regression(model_ols,  intercept = TRUE) 
+
+
+
+Mod <- model_ols %>%
+  tidy(conf.int = TRUE) %>%
+  rename(Term = term, B = estimate, SE = std.error, Lower = conf.low, Upper = conf.high) %>%
+  mutate(Term = ifelse(Term == "(Intercept)", "Intercept", Term)) %>% select(Term, B, Lower, Upper, p.value )
+
+
+
+set.seed(172635)
+
+WildObj <- wild.boot(z_DERS ~ z_CEA + z_CPA + z_CSA, data = dat, B = 10000) 
+
+# Extract all bootstrap estimates,
+B <- colMeans(WildObj$bootEstParam)  # Compute mean of bootstrap estimates
+
+boot_ci_df <- data.frame(
+  Term = colnames(WildObj$bootEstParam),  
+  boot.B = colMeans(WildObj$bootEstParam),  
+  boot.SE = apply(WildObj$bootEstParam, 2, sd),  
+  boot.Lower = apply(WildObj$bootEstParam, 2, quantile, probs = 0.025),
+  boot.Upper = apply(WildObj$bootEstParam, 2, quantile, probs = 0.975)
+) %>% 
+  mutate(Term = ifelse(Term == "(Intercept)", "Intercept", Term)) %>% 
+  mutate(`p-value` = 2 * (1 - pnorm(abs(boot.B / boot.SE)))) %>% select(-boot.SE) 
+
+boot_df <- as.data.frame(WildObj$bootEstParam)
+
+
+orig_est <- as.numeric(WildObj$origEstParam)
+names(orig_est) <- colnames(boot_df)
+
+orig_df <- data.frame(
+  Term = names(orig_est),
+  Orig_Estimate = orig_est
+)
+
+
+
+boot.dist2 <- boot_df |>
+  pivot_longer(cols = everything(), names_to = "Term", values_to = "Estimate") |>
+  left_join(orig_df, by = "Term") |>
+  ggplot(aes(x = Estimate)) +
+  geom_histogram(bins = 40, fill = "steelblue", color = "white") +
+  geom_vline(aes(xintercept = Orig_Estimate), color = "red", linetype = "dashed", linewidth = 1) +
+  facet_wrap(~ Term, scales = "free_y", ncol = 1) +
+  theme_minimal() +
+  labs(
+    title = "Wild Bootstrap Distributions of Coefficients",
+    x = "Bootstrapped Estimates",
+    y = "Frequency"
+  )
+
+
+ggsave("figures/boot.dist2.png", plot = boot.dist2, width = 8, height = 6, dpi = 300)
+
+
+
+# Merge Type III SS OLS and Bootstrap results
+comparison2 <- left_join(Mod, boot_ci_df, by = "Term") %>%
+  mutate(
+    # Compute absolute coefficient change
+    A_B_change = (B - boot.B),
+    A_B_pct_change =  pmax(pmin(round((A_B_change / abs(B)) * 100, 2), 1000),-1000),
+
+    # Compute absolute changes in CI bounds
+    A_lower_change = (Lower - boot.Lower),
+    A_upper_change = (Upper - boot.Upper),
+
+    # Compute percentage changes in CI bounds
+    A_lower_pct_change = round((A_lower_change / abs(Lower)) * 100, 2),
+    A_upper_pct_change =  pmax( pmin(round((A_upper_change / abs(Upper)) * 100, 2), 1000),-1000),
+
+    # Compute OLS and Bootstrap CI widths
+    A_range_ols = (Upper - Lower),  
+    A_range_boot = (boot.Upper - boot.Lower),  
+    A_range_change = (A_range_boot - A_range_ols),
+    A_range_pct_change =  pmax( pmin(round((A_range_change / A_range_ols) * 100, 2), 1000),-1000),
+
+    # Flag changes 10+%
+     B_Diff_0.1 = ifelse(abs(A_B_change) >= 0.1, "Yes", "No"),
+    Lower_Diff_0.1 = ifelse(abs(A_lower_change) >= 0.1, "Yes", "No"),
+    Upper_Diff_0.1 = ifelse(abs(A_upper_change) >= 0.1, "Yes", "No"),
+    Range_Diff_0.1 = ifelse(abs(A_range_change) >= 0.1, "Yes", "No"),
+    B_Diff_0.2 = ifelse(abs(A_B_change) >= 0.2, "Yes", "No"),
+    Lower_Diff_0.2 = ifelse(abs(A_lower_change) >= 0.2, "Yes", "No"),
+    Upper_Diff_0.2 = ifelse(abs(A_upper_change) >= 0.2, "Yes", "No"),
+    Range_Diff_0.2 = ifelse(abs(A_range_change) >=0.2, "Yes", "No"),
+    
+    B_10pct = ifelse(abs(A_B_pct_change) >= 10, "Yes", "No"),
+    Lower_10pct = ifelse(abs(A_lower_pct_change) >= 10, "Yes", "No"),
+    Upper_10pct = ifelse(abs(A_upper_pct_change) >= 10, "Yes", "No"),
+    Range_10pct = ifelse(abs(A_range_pct_change) >= 10, "Yes", "No"),
+                changep = p.value - `p-value`,
+        SigChange = case_when(
+      p.value < 0.05 & `p-value` < 0.05 ~ "Remains significant",
+      p.value >= 0.05 & `p-value` >= 0.05 ~ "Remains non-sig",
+      p.value < 0.05 & `p-value` >= 0.05 ~ "Change from sig to non-sig",
+      p.value >= 0.05 & `p-value` < 0.05 ~ "Change from non-sig to sig"),
+    SigChangeDirection = case_when(
+      p.value < 0.05 & `p-value` < 0.05 & (sign(B) != sign(boot.B)) ~ "Remains sig, B changes direction",
+      p.value < 0.05 & `p-value` < 0.05 & (sign(B) == sign(boot.B)) ~ "Remains sig, B same direction",
+      p.value>= 0.05 & `p-value` < 0.05 & (sign(B) == sign(boot.B) | sign(B) != sign(boot.B)) ~ "Non-sig to sig, B same direction",
+      p.value < 0.05 & `p-value` >= 0.05 & (sign(B) != sign(boot.B) | sign(B) == sign(boot.B)) ~ "Sig to non-sig, B changes direction",
+      p.value >= 0.05 & `p-value` >= 0.05 & (sign(B) != sign(boot.B)) ~ "Remains non-sig, B changes direction",
+      p.value >= 0.05 & `p-value` >= 0.05 & (sign(B) == sign(boot.B)) ~ "Remains non-sig, B same direction",
+      TRUE ~ NA_character_)) %>%
+  select( Term,     B, boot.B, A_B_change, A_B_pct_change, B_10pct, B_Diff_0.1, B_Diff_0.2,
+    Lower, boot.Lower, A_lower_change, A_lower_pct_change, Lower_10pct, Lower_Diff_0.1, Lower_Diff_0.2,
+    Upper, boot.Upper, A_upper_change, A_upper_pct_change, Upper_10pct, Upper_Diff_0.1, Upper_Diff_0.2,
+    A_range_ols, A_range_boot, A_range_change, A_range_pct_change,  Range_10pct,
+      Range_Diff_0.1, Range_Diff_0.2, p.value, "p-value", changep, SigChange, SigChangeDirection) 
+
+
+
+
+beta2<- comparison2 %>% select(Term, B, boot.B, A_B_change, A_B_pct_change, B_10pct, B_Diff_0.1, B_Diff_0.2) %>%  flextable %>% autofit %>% 
+set_header_labels(A_B_change = "B_diff", A_B_pct_change = "%_Diff",  B_10pct="Diff_10%" ,   B_Diff_0.1 = "Diff_0.1", B_Diff_0.2 = "Diff_0.2" ) %>%
+              colformat_double(digits = thresround) %>%  
+  flextable::add_footer_lines("B =  standardized regression coefficient reproduced B; boot.B =  boostrapped standardized reproduced B; B_diff = change in B - boot.B; %_Diff = percentage difference, percentage changes were truncated at ±1000%; Diff_10% =  difference ≥10% ; Diff_0.1 and Diff_0.2  =  absolute difference ≥0.1 and ≥0.2, respectively.") 
+
+lower2<- comparison2 %>% select(Term, Lower, boot.Lower, A_lower_change, A_lower_pct_change, Lower_10pct, Lower_Diff_0.1, Lower_Diff_0.2) %>% flextable %>% autofit %>% 
+set_header_labels(A_lower_change = "Lower_diff", A_lower_pct_change = "%_Diff", Lower_10pct = "Diff_10%",  Lower_Diff_0.1 = "Diff_0.1",  Lower_Diff_0.2 = "Diff_0.2") %>%
+              colformat_double(digits = thresround)  %>%  
+  flextable::add_footer_lines("Lower =  standardized reproduced lower CI; boot.Lower =  boostrapped standardized reproduced lower CI; Lower_diff = change in Lower - boot.Lower; %_change = percentage difference, percentage changes were truncated at ±1000%; Diff_10% =  difference ≥10% ; Diff_0.1 and Diff_0.2  =  absolute difference ≥0.1 and ≥0.2, respectively." ) 
+
+upper2<- comparison2 %>% select(Term, Upper, boot.Upper, A_upper_change, A_upper_pct_change, Upper_10pct, Upper_Diff_0.1, Upper_Diff_0.2) %>% flextable %>% autofit %>% 
+set_header_labels(A_upper_change = "Upper_diff", A_upper_pct_change = "%_Diff", Upper_10pct ="Diff_10%", Upper_Diff_0.1 = "Diff_0.1", Upper_Diff_0.2 = "Diff_0.2") %>%
+              colformat_double(digits = thresround) %>%  
+  flextable::add_footer_lines("Upper =  standardized reproduced upper CI; boot.Upper =  boostrapped standardized reproduced upper CI; Upper_diff = change in Upper - boot.Upper; %_change = percentage difference, percentage changes were truncated at ±1000%; Diff_10% =  difference ≥10% ; Diff_0.1 and Diff_0.2  =  absolute difference ≥0.1 and ≥0.2, respectively." ) 
+
+range2<- comparison2 %>% select(Term, A_range_ols, A_range_boot, A_range_change, A_range_pct_change, Range_10pct, Range_Diff_0.1, Range_Diff_0.2) %>% flextable %>% autofit %>% 
+set_header_labels(A_range_ols ="Range", A_range_boot="boot.Range", A_range_change = "Range_Diff" ,  A_range_pct_change="%_Diff", Range_10pct="Diff_10%", Range_Diff_0.1="Diff_0.1", Range_Diff_0.2="Diff_0.2") %>%
+              colformat_double(digits = thresround) %>%  
+  flextable::add_footer_lines("Range =  standardized reproduced CI range; boot.B =  boostrapped standardized reproduced CI range; Range_diff = change in CI Range ; %_change = percentage difference, percentage changes were truncated at ±1000%, Diff_10% =  difference ≥10% ; Diff_0.1 and Diff_0.2  =  absolute difference ≥0.1 and ≥0.2, respectively.") 
+
+
+p.val2<- comparison2 %>% select(Term, p.value, "p-value", changep,SigChangeDirection) %>%
+  mutate(p.value = sapply(p.value, round_p)) %>% mutate(`p-value` = sapply(`p-value`, round_p)) %>%flextable %>% autofit %>% set_header_labels(p.value ="p-value", "p-value"="boot.p-value") %>% 
+              colformat_double(digits = thresround) %>%  
+  flextable::add_footer_lines("p-value =  standardized reproduced p-value; boot.p-value =  boostrapped standardized reproduced p-value; changep = change in p-value - boot.p-value; SigChangeDirection =  statistical significance and B change between reproduced and bootstrapped model.") 
+
+```
+
+#### Bootstrapped results
+
+Wild bootstrapping was performed with 10,000 iterations.
+
+##### Change in regression coefficients
+
+```{r, ft.align="left"}
+beta2
+```
+
+##### Change in lower 95% confidence interval
+
+```{r, ft.align="left"}
+
+lower2
+
+```
+
+##### Change in upper 95% confidence interval
+
+```{r, ft.align="left"}
+upper2
+```
+
+##### Change in Range of 95% confidence interval
+
+```{r, ft.align="left"}
+range2
+
+```
+
+##### Change in p-value significance and regression coefficient direction
+
+```{r, ft.align="left"}
+p.val2
+```
+
+##### Check distribution of bootstrap estimates
+
+The bootstrap distribution of each coefficient appeared approximately normal and centered near the original estimate (red dashed line), suggesting that the estimates are relatively stable. No strong skewness or multimodality was observed.
+
+```{r}
+knitr::include_graphics('figures/boot.dist2.png')
+
+```
+
+#### Conclusions based on the bootstrapped model
+
+This model was inferentially reproducible. While some statistics changed by 10% or more, these differences were not meaningful, with a change in standardized regression coefficients of less than 0.1. The direction of effects and statistical significance remained consistent between the reproduced and bootstrapped models.
+:::
+
+# Model 3
+
+::: panel-tabset
+### Original results
+
+##### Model results for `r namey3`
+
+```{r,  ft.align="left"}
+
+O_coefficients_flextable_3
+
+```
+
+##### Fit Statistics `r namey3`
+
+```{r,  ft.align="left"}
+O_fit_stats_flextable_3
+```
+
+##### ANOVA Table for `r namey3`
+
+```{r,  ft.align="left"}
+O_anova_flextable_3
+
+```
+
+### Reproduced results
+
+##### Model results for `r namey3`
+
+```{r,  ft.align="left"}
+R_coefficients_flextable_3
+```
+
+##### Fit statistics for `r namey3`
+
+```{r, ft.align="left"}
+R_fit_stats_flextable_3
+```
+
+##### ANOVA Table for `r namey3`
+
+```{r, ft.align="left"}
+R_anova_flextable_3
+```
+
+##### Visualisation of regression model
+
+The blue line shows the best line of fit with shading representing 95% confidence intervals, while holding all other covariates constant. The dots show partial residuals, which reflect the observed data adjusted for all other predictors except the one being plotted.
+
+```{r, out.width = "80%", out.height="80%"}
+knitr::include_graphics('figures/reg_plot_3.png') 
+
+```
+
+##### Checking residuals plots for patterns
+
+Blue line showing quadratic fit for residuals
+
+```{r, out.width = "100%", out.height="100%"}
+knitr::include_graphics('figures/res_plot_3.png') 
+
+```
+
+##### Testing residuals for non linear relationships
+
+```{r, ft.align="left"}
+R_residuals_flextable_3
+```
+
+##### Checking univariate relationships with the dependent variable using scatterplots
+
+Blue line shows linear relationship, red line indicates relationship inferred by GAM modelling
+
+```{r, out.width = "80%", out.height="80%"}
+knitr::include_graphics('figures/scatter_plot_3.png') 
+
+```
+
+##### Linearity results
+
+`r linno`
+
+##### Testing for homoscedasticity
+
+```{r, ft.align="left"}
+R_homoscedasticity_flextable_3
+```
+
+##### Homoscedasticity results
+
+-   `r ifelse(R_homoscedasticity_raw_df_3$p.value[1] < 0.05, "The studentized Breusch-Pagan test indicates heteroscedasticity.", "The studentized Breusch-Pagan test supports homoscedasticity.")`
+-   `r somehet`
+
+##### Model descriptives including cook's distance and leverage to understand outliers
+
+```{r, ft.align="left"}
+R_description_flextable_3
+
+```
+
+##### Cooks threshold
+
+Cook's distance measures the overall change in fit, if the *ith* observation is removed. Potentially influential observations are identified by $\text{Cook's Distance}_i > \frac{4}{n}$, where *n* is the number of observations. In practice, a threshold of 0.5 to 1 is often used to identify influential observations.
+
+```{r, out.width = "80%", out.height="80%"}
+
+knitr::include_graphics('figures/cooks_threshold_3.png')
+```
+
+##### DFFIT threshold
+
+DFFIT measures how many standard deviations the fitted values will change when the *ith* observation is removed. Potential influential observations $\left| \text{DFFITS}_i \right| > \frac{2\sqrt{p}}{\sqrt{n}}$ where *p* is the number of predictors (including the intercept), and *n* is the number of observations. In practice, this can result in a large number of points identified, a practical cut-off of 1 was used to flag observations with meaningful impact.
+
+```{r, out.width = "80%", out.height="80%"}
+knitr::include_graphics('figures/dffit_threshold_3.png')
+
+```
+
+##### DFBETA threshold
+
+DFBETAS quantify the influence of the *ith* observation on the *jth* regression coefficient as the change in that coefficient when the observation is omitted, expressed in units of the coefficient’s estimated standard error. There is a DFBETA for each model parameter. Potential influential observations $|\text{DFBETA}_{ij}| > \frac{2}{\sqrt{n}}$, where *n* is the number of observations. In larger datasets, this threshold can flag a high number of observations with only minor influence on the model. A practical cut-off of 1 was used to flag observations with meaningful impact.
+
+```{r, out.width = "100%", out.height="100%"}
+knitr::include_graphics('figures/dbetas_threshold_3.png') 
+
+```
+
+##### Influence plot
+
+Observations with high leverage (horizontal) and large residuals (vertical, typically at ±2 or ±3 studentized residuals) are concerning, as they may disproportionately influence the model. This combination is reflected by large bubbles with high Cook's distance indicated by darker shadings of blue.
+
+```{r, out.width = "100%", out.height="100%"}
+knitr::include_graphics('figures/cooks_plots_3.png') 
+
+```
+
+##### COVRATIO plot
+
+COVRATIO measures the overall change in the precision (covariance matrix) of the estimated regression coefficients when the ith observation is removed. Values close to 1 indicate little influence on the model’s precision. Values below 1 suggest that an observation inflates the variances and reduces precision, resulting in wider confidence intervals, whereas values above 1 suggest deflated variances and narrower confidence intervals. A commonly cited guideline is $\left|\mathrm{COVRATIO}_i - 1\right| > \frac{3p}{n}$, where *p* is the number of parameters and *n* is the number of observations. A practical cut-off between 0.9 to 1.1 was used to flag observations with meaningful impact on precision, although there is no agreed universal alternative cut-off.
+
+```{r, out.width = "100%", out.height="100%"}
+knitr::include_graphics('figures/covratio_plot_3.png') 
+
+```
+
+##### Observations of interest identified by the influence plot
+
+```{r, ft.align="left"}
+ R_cooks_distance_flextable_3
+```
+
+##### Results for outliers and influential points
+
+-   Two observations had studentized residuals \> 3. Both had low leverage and small Cook’s distance, with DFBETAS and DFFITS within conventional ranges. However, their COVRATIO values were substantially \< 1, suggesting little effect on point estimates but potential inflation of standard errors (wider confidence intervals). Separately, some observations showed COVRATIO \> 1, indicating deflated standard errors (narrower confidence intervals).
+
+##### Checking for normality of the residuals using a Q–Q plot
+
+```{r, out.width = "80%", out.height="80%"}
+knitr::include_graphics('figures/qq_plot_3.png') 
+```
+
+##### Normality of residuals using Shapiro-Wilk and Kolmogorov-Smirnov tests
+
+```{r, ft.align="left"}
+R_normality_ks_flextable_3
+R_normality_sw_flextable_3
+```
+
+##### Normality results
+
+-   `r ifelse(R_normality_ks_raw_df_3$p.value[1] < 0.05, "The Kolmogorov-Smirnov test indicates residuals may not be normally distributed.", "The Kolmogorov-Smirnov supports residuals being normally distributed.")`
+-   `r ifelse(R_normality_sw_raw_df_3$p.value[1] < 0.05, "The Shapiro-Wilk normality test indicates residuals may not be normally distributed.", "The Shapiro-Wilk supports residuals being normally distributed.")`
+-   `r normalQ`
+
+##### Assessing collinearity with VIF
+
+```{r,  ft.align="left"}
+R_collinearity_flextable_3
+```
+
+##### Collinearity results
+
+-   `r as.character(printvif(R_collinearity_raw_df_3$vif))` <br>
+-   `r vifnoprob`
+
+##### Assessing independence with the Durbin–Watson test for autocorrelation
+
+```{r, ft.align="left"}
+R_independence_flextable_3
+```
+
+##### Independence results
+
+-   `r ifelse(R_independence_raw_df_3$p[1] < 0.05, "The Durbin–Watson test suggests there are auto-correlation issues.", "The Durbin–Watson test suggests there are no auto-correlation issues.")`
+-   `r indDesYes`
+
+##### Assumption conclusions
+
+No meaningful departures from the assumptions of normality, or independence were observed. However, residual plots and diagnostic tests indicated potential issues with linearity, suggesting that a non-linear relationship may not have been adequately captured, and residuals may be mildly heteroscedastic. Additionally, the presence of observations with high DFBETA, DFFIT and COVRatio indicates that further investigation of potential influential points is warranted.
+
+### Differences
+
+##### Forest plot showing original and reproduced coefficients and 95% confidence intervals for `r namey3`
+
+```{r}
+
+knitr::include_graphics('figures/forest_plot_model_3.png')
+
+```
+
+##### Change in regression coefficients
+
+```{r, ft.align="left"}
+CC_model_3
+```
+
+##### Change in lower 95% confidence intervals for coefficients
+
+```{r, ft.align="left"}
+
+CL_model_3
+```
+
+##### Change in upper 95% confidence intervals for coefficients
+
+```{r, ft.align="left"}
+
+CU_model_3
+```
+
+##### Change in R^2^
+
+```{r, ft.align="left"}
+R2_model_3
+
+```
+
+##### Change in global F
+
+```{r, ft.align="left"}
+FF_model_3
+```
+
+##### Change in degrees of freedom
+
+```{r, ft.align="left"}
+DF_model_3
+```
+
+##### Change in p-values
+
+```{r, ft.align="left"}
+
+Cp_model_3
+```
+
+##### Bland Altman Plot showing differences between original and reproduced p-values for `r namey3`
+
+```{r}
+
+knitr::include_graphics('figures/bland_altman_plot_model_3.png')
+
+```
+
+##### Results for p-values
+
+-   `r p_repro`
+
+#### Conclusion computational reproducibility
+
+`r MostCompRep`
+
+### Sensitivity analysis
+
+#### Methods
+
+The model was successfully reproduced; however, residual diagnostics suggested potential non-linearity and the presence of observations that may influence point estimates or confidence intervals. Evidence of non-linearity was primarily associated with the variables CEA and CPA. To assess the impact of this departure from linearity, non-linear terms were introduced separately for CEA and CPA and the resulting model fit (AIC and BIC) were compared with the original specification. In these models, all variables were standardized. The non-linear predictor, which was centered and scaled prior to creation of squared and cubic terms. Visualisation was performed using scatterplots on the original scale to illustrate the fitted relationships from the linear, quadratic, and cubic models.
+
+When non-linear terms were not supported, robustness of the findings was further assessed by examining bootstrapped standardized regression coefficients and their corresponding 95% confidence intervals. Percentage and absolute changes in estimates and confidence interval bounds relative to the linear model were summarised using thresholds of 10% change and standardized coefficient differences of \<0.10 and \<0.20. Coefficient direction and statistical significance were assessed for consistency. Wild bootstrapping was used to account for potential heteroscedasticity.
+
+#### Results
+
+```{r}
+
+
+dat <- dat %>%
+  mutate(
+    z_CEA_= scale(CEA, scale = TRUE, center = TRUE),  
+    z_CEA_2 = (z_CEA^2) , 
+    z_CEA_3 = (z_CEA^3) , 
+    z_CPA = scale(CPA, scale = TRUE, center = TRUE),  
+    z_CPA_2 = (z_CPA ^2),  
+    z_CPA_3 = (z_CPA ^3))
+   
+    
+
+style_pvalue_4dp <- function(x) {
+  ifelse(
+    is.na(x),
+    "",
+    sprintf("%.4f", x)
+  )
+}
+
+
+
+model_ols <- lm(z_IIP32_Total ~ z_CEA  +  z_CPA + z_CSA, data = dat)
+my_model_ols<-tbl_regression(model_ols, intercept = TRUE)
+model_ols_glance<-data.frame(glance(model_ols))
+
+CEA_quad <- lm(z_IIP32_Total ~ z_CEA+ z_CEA_2  +  z_CPA  + z_CSA, data = dat)
+my_CEA_quad<-tbl_regression(CEA_quad,  intercept = TRUE, estimate_fun = ~ style_number(.x, digits = 4))
+CEA_quad_glance<-data.frame(glance(CEA_quad))
+
+CEA_cubic <- lm(z_IIP32_Total ~ z_CEA+ z_CEA_2  +  z_CEA_3 +  z_CPA  + z_CSA, data = dat)
+my_CEA_cubic<-tbl_regression(CEA_cubic, intercept = TRUE, estimate_fun = ~ style_number(.x, digits = 4),  pvalue_fun   = ~ round_p(.x))
+CEA_cubic_glance<-data.frame(glance(CEA_cubic))
+
+
+CPA_quad  <- lm(z_IIP32_Total ~ z_CEA + z_CPA  +  z_CPA_2 + z_CSA, data = dat)
+my_CPA_quad <-tbl_regression(CPA_quad, intercept = TRUE, estimate_fun = ~ style_number(.x, digits = 4))
+CPA_quad_glance<-data.frame(glance(CPA_quad))
+
+CPA_cubic <- lm(z_IIP32_Total ~ z_CEA  + z_CPA  +  z_CPA_2 + z_CPA_3  + z_CSA, data = dat)
+my_CPA_cubic<-tbl_regression(CPA_cubic, intercept = TRUE,  estimate_fun = ~ style_number(.x, digits = 4))
+CPA_cubic_glance<-data.frame(glance(CPA_cubic))
+
+
+non_linear_CEA <- tbl_merge(
+  tbls = list(my_CEA_quad, my_CEA_cubic),
+  tab_spanner = c("CEA Quadratic", "CEA Cubic")) 
+
+
+non_linear_CPA <- tbl_merge(
+  tbls = list( my_CPA_quad, my_CPA_cubic),
+  tab_spanner = c("CPA Quadratic", "CPA Cubic")) 
+
+
+
+modfit3 <- bind_rows(model_ols_glance, CEA_quad_glance, CEA_cubic_glance, CPA_quad_glance, CPA_cubic_glance) %>% 
+mutate(Model_type = c("Linear", "CEA Quadratic", "CEA Cubic","CPA Quadratic", "CPA Cubic")) %>%
+      relocate(Model_type, .before = 1) 
+
+modfit_table<-modfit3 %>%
+  mutate( adj.r.squared = round(adj.r.squared, 3)) %>% rename(R2adj=adj.r.squared) %>% 
+    select(-r.squared,-p.value, -statistic)  %>%  flextable %>% autofit
+
+```
+
+##### standardised z_IIP32_Total with only linear terms
+
+```{r}
+my_model_ols
+```
+
+##### Comparison of z_IIP32_Total with non-linear terms for CEA
+
+```{r, ft.align="left"}
+non_linear_CEA 
+```
+
+##### Comparison of z_IIP32_Total with non-linear terms for CPA
+
+```{r, ft.align="left"}
+non_linear_CPA
+```
+
+##### Comparison of z_IIP32_Total with non-linear models fit
+
+```{r, ft.align="left"}
+modfit_table
+```
+
+```{r}
+
+# 1) Fit models on ORIGINAL variables
+model_lin   <- lm(IIP32_Total ~ CEA + CPA + CSA, data = dat)
+model_quad  <- lm(IIP32_Total ~ CEA + I(CEA^2) + CPA + CSA, data = dat)
+model_cubic <- lm(IIP32_Total ~ CEA + I(CEA^2) + I(CEA^3) + CPA + CSA, data = dat)
+
+# 2) Prediction grid (hold CPA/CSA at their means)
+newdat <- tibble(
+  CEA = seq(min(dat$CEA, na.rm = TRUE), max(dat$CEA, na.rm = TRUE), length.out = 200),
+  CPA = mean(dat$CPA, na.rm = TRUE),
+  CSA = mean(dat$CSA, na.rm = TRUE)
+)
+
+# Helper to get predictions + SE
+pred_df <- function(mod, nd, label){
+  p <- predict(mod, newdata = nd, se.fit = TRUE)
+  tibble(
+    model = label,
+    CEA   = nd$CEA,
+    fit   = as.numeric(p$fit),
+    se    = as.numeric(p$se.fit)
+  ) |>
+    mutate(lwr = fit - 1.96*se, upr = fit + 1.96*se)
+}
+
+pred_all <- bind_rows(
+  pred_df(model_lin,   newdat, "Linear"),
+  pred_df(model_quad,  newdat, "Quadratic"),
+  pred_df(model_cubic, newdat, "Cubic")
+)
+
+# 3) Plot: observed points + fitted lines + 95% CIs
+ggplot(dat, aes(x = CEA, y = IIP32_Total)) +
+  geom_point(alpha = 0.4, size = 1) +
+  geom_ribbon(
+    data = pred_all,
+    inherit.aes = FALSE,
+    aes(x = CEA, ymin = lwr, ymax = upr, fill = model),
+    alpha = 0.15
+  ) +
+  geom_line(
+    data = pred_all,
+    inherit.aes = FALSE,
+    aes(x = CEA, y = fit, colour = model),
+    size = 1
+  ) +
+  labs(
+    x = "CEA (original scale)",
+    y = "IIP32 Total (original scale)",
+    title = "Observed data with fitted linear, quadratic, and cubic models for CEA \n with linear CPA & CSA terms held at means."
+  ) +
+  theme_grey() +
+  theme(legend.position = "top")
+
+```
+
+```{r}
+# 1) Fit models with CPA as the focal predictor (CEA & CSA as covariates)
+model_lin_CPA   <- lm(IIP32_Total ~ CPA + CEA + CSA, data = dat)
+model_quad_CPA  <- lm(IIP32_Total ~ CPA + I(CPA^2) + CEA + CSA, data = dat)
+model_cubic_CPA <- lm(IIP32_Total ~ CPA + I(CPA^2) + I(CPA^3) + CEA + CSA, data = dat)
+
+# 2) Prediction grid over CPA (hold CEA/CSA at their means)
+newdat_cpa <- tibble(
+  CPA = seq(min(dat$CPA, na.rm = TRUE), max(dat$CPA, na.rm = TRUE), length.out = 200),
+  CEA = mean(dat$CEA, na.rm = TRUE),
+  CSA = mean(dat$CSA, na.rm = TRUE)
+)
+
+# helper
+pred_df <- function(mod, nd, label){
+  p <- predict(mod, newdata = nd, se.fit = TRUE)
+  tibble(
+    model = label,
+    CPA   = nd$CPA,
+    fit   = as.numeric(p$fit),
+    se    = as.numeric(p$se.fit)
+  ) |>
+    mutate(lwr = fit - 1.96*se, upr = fit + 1.96*se)
+}
+
+pred_all_cpa <- bind_rows(
+  pred_df(model_lin_CPA,   newdat_cpa, "Linear"),
+  pred_df(model_quad_CPA,  newdat_cpa, "Quadratic"),
+  pred_df(model_cubic_CPA, newdat_cpa, "Cubic")
+)
+
+# 3) Plot observed data + fitted lines + 95% CIs (CPA on x-axis)
+ggplot(dat, aes(x = CPA, y = IIP32_Total)) +
+  geom_point(alpha = 0.4, size = 1) +
+  geom_ribbon(
+    data = pred_all_cpa,
+    inherit.aes = FALSE,
+    aes(x = CPA, ymin = lwr, ymax = upr, fill = model),
+    alpha = 0.15
+  ) +
+  geom_line(
+    data = pred_all_cpa,
+    inherit.aes = FALSE,
+    aes(x = CPA, y = fit, colour = model),
+    size = 1
+  ) +
+  labs(
+    x = "CPA (original scale)",
+    y = "IIP32 Total (original scale)",
+    title = "Observed data with fitted linear, quadratic, and cubic models for CPA \n with linear CEA & CSA terms held at their means."
+  ) +
+  theme_grey() +
+  theme(legend.position = "top")
+
+
+```
+
+##### Linearity conclusion
+
+After re-running the models and re-checking assumptions, statistically significant departures from linearity were detected. Quadratic and cubic terms were considered for CEA and CPA. Although the quadratic terms were statistically significant, AIC and BIC did not indicate improved model fit. Visual inspection suggested that the apparent non-linearity arose from sparse data at the higher end of the predictor ranges rather than a meaningful improvement in model performance.
+
+```{r}
+
+
+model_ols_glance<-glance(model_ols)
+ols_table <- tbl_regression(model_ols,  intercept = TRUE) 
+
+
+
+Mod <- model_ols %>%
+  tidy(conf.int = TRUE) %>%
+  rename(Term = term, B = estimate, SE = std.error, Lower = conf.low, Upper = conf.high) %>%
+  mutate(Term = ifelse(Term == "(Intercept)", "Intercept", Term)) %>% select(Term, B, Lower, Upper, p.value )
+
+
+
+set.seed(172635)
+
+WildObj <- wild.boot(z_IIP32_Total  ~ z_CEA + z_CPA + z_CSA, data = dat, B = 10000) 
+
+# Extract all bootstrap estimates,
+B <- colMeans(WildObj$bootEstParam)  # Compute mean of bootstrap estimates
+
+boot_ci_df <- data.frame(
+  Term = colnames(WildObj$bootEstParam),  
+  boot.B = colMeans(WildObj$bootEstParam),  
+  boot.SE = apply(WildObj$bootEstParam, 2, sd),  
+  boot.Lower = apply(WildObj$bootEstParam, 2, quantile, probs = 0.025),
+  boot.Upper = apply(WildObj$bootEstParam, 2, quantile, probs = 0.975)
+) %>% 
+  mutate(Term = ifelse(Term == "(Intercept)", "Intercept", Term)) %>% 
+  mutate(`p-value` = 2 * (1 - pnorm(abs(boot.B / boot.SE)))) %>% select(-boot.SE) 
+
+boot_df <- as.data.frame(WildObj$bootEstParam)
+
+
+orig_est <- as.numeric(WildObj$origEstParam)
+names(orig_est) <- colnames(boot_df)
+
+orig_df <- data.frame(
+  Term = names(orig_est),
+  Orig_Estimate = orig_est
+)
+
+
+
+boot.dist3 <- boot_df |>
+  pivot_longer(cols = everything(), names_to = "Term", values_to = "Estimate") |>
+  left_join(orig_df, by = "Term") |>
+  ggplot(aes(x = Estimate)) +
+  geom_histogram(bins = 40, fill = "steelblue", color = "white") +
+  geom_vline(aes(xintercept = Orig_Estimate), color = "red", linetype = "dashed", linewidth = 1) +
+  facet_wrap(~ Term, scales = "free_y", ncol = 1) +
+  theme_minimal() +
+  labs(
+    title = "Wild Bootstrap Distributions of Coefficients",
+    x = "Bootstrapped Estimates",
+    y = "Frequency"
+  )
+
+
+ggsave("figures/boot.dist3.png", plot = boot.dist3, width = 8, height = 6, dpi = 300)
+
+
+
+# Merge Type III SS OLS and Bootstrap results
+comparison3 <- left_join(Mod, boot_ci_df, by = "Term") %>%
+  mutate(
+    # Compute absolute coefficient change
+    A_B_change = (B - boot.B),
+    A_B_pct_change =  pmax(pmin(round((A_B_change / abs(B)) * 100, 2), 1000),-1000),
+
+    # Compute absolute changes in CI bounds
+    A_lower_change = (Lower - boot.Lower),
+    A_upper_change = (Upper - boot.Upper),
+
+    # Compute percentage changes in CI bounds
+    A_lower_pct_change = round((A_lower_change / abs(Lower)) * 100, 2),
+    A_upper_pct_change =  pmax( pmin(round((A_upper_change / abs(Upper)) * 100, 2), 1000),-1000),
+
+    # Compute OLS and Bootstrap CI widths
+    A_range_ols = (Upper - Lower),  
+    A_range_boot = (boot.Upper - boot.Lower),  
+    A_range_change = (A_range_boot - A_range_ols),
+    A_range_pct_change =  pmax( pmin(round((A_range_change / A_range_ols) * 100, 2), 1000),-1000),
+  
+    # Flag changes 10+%
+     B_Diff_0.1 = ifelse(abs(A_B_change) >= 0.1, "Yes", "No"),
+    Lower_Diff_0.1 = ifelse(abs(A_lower_change) >= 0.1, "Yes", "No"),
+    Upper_Diff_0.1 = ifelse(abs(A_upper_change) >= 0.1, "Yes", "No"),
+    Range_Diff_0.1 = ifelse(abs(A_range_change) >= 0.1, "Yes", "No"),
+    B_Diff_0.2 = ifelse(abs(A_B_change) >= 0.2, "Yes", "No"),
+    Lower_Diff_0.2 = ifelse(abs(A_lower_change) >= 0.2, "Yes", "No"),
+    Upper_Diff_0.2 = ifelse(abs(A_upper_change) >= 0.2, "Yes", "No"),
+    Range_Diff_0.2 = ifelse(abs(A_range_change) >=0.2, "Yes", "No"),
+    
+    B_10pct = ifelse(abs(A_B_pct_change) >= 10, "Yes", "No"),
+    Lower_10pct = ifelse(abs(A_lower_pct_change) >= 10, "Yes", "No"),
+    Upper_10pct = ifelse(abs(A_upper_pct_change) >= 10, "Yes", "No"),
+    Range_10pct = ifelse(abs(A_range_pct_change) >= 10, "Yes", "No"),
+                changep = p.value - `p-value`,
+        SigChange = case_when(
+      p.value < 0.05 & `p-value` < 0.05 ~ "Remains significant",
+      p.value >= 0.05 & `p-value` >= 0.05 ~ "Remains non-sig",
+      p.value < 0.05 & `p-value` >= 0.05 ~ "Change from sig to non-sig",
+      p.value >= 0.05 & `p-value` < 0.05 ~ "Change from non-sig to sig"),
+    SigChangeDirection = case_when(
+      p.value < 0.05 & `p-value` < 0.05 & (sign(B) != sign(boot.B)) ~ "Remains sig, B changes direction",
+      p.value < 0.05 & `p-value` < 0.05 & (sign(B) == sign(boot.B)) ~ "Remains sig, B same direction",
+      p.value>= 0.05 & `p-value` < 0.05 & (sign(B) == sign(boot.B) | sign(B) != sign(boot.B)) ~ "Non-sig to sig, B same direction",
+      p.value < 0.05 & `p-value` >= 0.05 & (sign(B) != sign(boot.B) | sign(B) == sign(boot.B)) ~ "Sig to non-sig, B changes direction",
+      p.value >= 0.05 & `p-value` >= 0.05 & (sign(B) != sign(boot.B)) ~ "Remains non-sig, B changes direction",
+      p.value >= 0.05 & `p-value` >= 0.05 & (sign(B) == sign(boot.B)) ~ "Remains non-sig, B same direction",
+      TRUE ~ NA_character_)) %>%
+  select(
+    Term,
+    B, boot.B, A_B_change, A_B_pct_change, B_10pct, B_Diff_0.1, B_Diff_0.2,
+    Lower, boot.Lower, A_lower_change, A_lower_pct_change, Lower_10pct, Lower_Diff_0.1, Lower_Diff_0.2,
+    Upper, boot.Upper, A_upper_change, A_upper_pct_change, Upper_10pct, Upper_Diff_0.1, Upper_Diff_0.2,
+    A_range_ols, A_range_boot, A_range_change, A_range_pct_change,  Range_10pct,
+      Range_Diff_0.1, Range_Diff_0.2, p.value, "p-value", changep, SigChange, SigChangeDirection) 
+
+
+
+
+
+
+beta3<- comparison3 %>% select(Term, B, boot.B, A_B_change, A_B_pct_change, B_10pct, B_Diff_0.1, B_Diff_0.2) %>%
+    mutate(A_B_pct_change = as.numeric(A_B_pct_change), A_B_pct_change = case_when(A_B_pct_change > 10000 ~ NA_real_, TRUE ~ A_B_pct_change)) %>%
+  flextable %>% autofit %>% 
+set_header_labels(A_B_change = "B_diff", A_B_pct_change = "%_Diff",  B_10pct="Diff_10%" ,   B_Diff_0.1 = "Diff_0.1", B_Diff_0.2 = "Diff_0.2" ) %>%
+              colformat_double(digits = thresround) %>%  
+  flextable::add_footer_lines("B =  standardized regression coefficient reproduced B; boot.B =  boostrapped standardized reproduced B; B_diff = change in B - boot.B; %_Diff = percentage difference, percentage changes were truncated at ±1000%; Diff_10% =  difference ≥10% ; Diff_0.1 and Diff_0.2  =  absolute difference ≥0.1 and ≥0.2, respectively.") 
+
+lower3<- comparison3 %>% select(Term, Lower, boot.Lower, A_lower_change, A_lower_pct_change, Lower_10pct, Lower_Diff_0.1, Lower_Diff_0.2) %>% flextable %>% autofit %>% 
+set_header_labels(A_lower_change = "Lower_diff", A_lower_pct_change = "%_Diff", Lower_10pct = "Diff_10%",  Lower_Diff_0.1 = "Diff_0.1",  Lower_Diff_0.2 = "Diff_0.2") %>%
+              colformat_double(digits = thresround)  %>%  
+  flextable::add_footer_lines("Lower =  standardized reproduced lower CI; boot.Lower =  boostrapped standardized reproduced lower CI; Lower_diff = change in Lower - boot.Lower; %_change = percentage difference, percentage changes were truncated at ±1000%; Diff_10% =  difference ≥10% ; Diff_0.1 and Diff_0.2  =  absolute difference ≥0.1 and ≥0.2, respectively." ) 
+
+upper3<- comparison3 %>% select(Term, Upper, boot.Upper, A_upper_change, A_upper_pct_change, Upper_10pct, Upper_Diff_0.1, Upper_Diff_0.2) %>% flextable %>% autofit %>% 
+set_header_labels(A_upper_change = "Upper_diff", A_upper_pct_change = "%_Diff", Upper_10pct ="Diff_10%", Upper_Diff_0.1 = "Diff_0.1", Upper_Diff_0.2 = "Diff_0.2") %>%
+              colformat_double(digits = thresround) %>%  
+  flextable::add_footer_lines("Upper =  standardized reproduced upper CI; boot.Upper =  boostrapped standardized reproduced upper CI; Upper_diff = change in Upper - boot.Upper; %_change = percentage difference, percentage changes were truncated at ±1000%; Diff_10% =  difference ≥10% ; Diff_0.1 and Diff_0.2  =  absolute difference ≥0.1 and ≥0.2, respectively." ) 
+
+range3<- comparison3 %>% select(Term, A_range_ols, A_range_boot, A_range_change, A_range_pct_change, Range_10pct, Range_Diff_0.1, Range_Diff_0.2) %>% flextable %>% autofit %>% 
+set_header_labels(A_range_ols ="Range", A_range_boot="boot.Range", A_range_change = "Range_Diff" ,  A_range_pct_change="%_Diff", Range_10pct="Diff_10%", Range_Diff_0.1="Diff_0.1", Range_Diff_0.2="Diff_0.2") %>%
+              colformat_double(digits = thresround) %>%  
+  flextable::add_footer_lines("Range =  standardized reproduced CI range; boot.B =  boostrapped standardized reproduced CI range; Range_diff = change in CI Range ; %_change = percentage difference, percentage changes were truncated at ±1000%, Diff_10% =  difference ≥10% ; Diff_0.1 and Diff_0.2  =  absolute difference ≥0.1 and ≥0.2, respectively.") 
+
+
+
+
+p.val3<- comparison3 %>% select(Term, p.value, "p-value", changep,SigChangeDirection) %>%
+  mutate(p.value = sapply(p.value, round_p)) %>% mutate(`p-value` = sapply(`p-value`, round_p)) %>%flextable %>% autofit %>% set_header_labels(p.value ="p-value", "p-value"="boot.p-value") %>% 
+              colformat_double(digits = thresround) %>%  
+  flextable::add_footer_lines("p-value =  standardized reproduced p-value; boot.p-value =  boostrapped standardized reproduced p-value; changep = change in p-value - boot.p-value; SigChangeDirection =  statistical significance and B change between reproduced and bootstrapped model.") 
+
+```
+
+#### Bootstrapping results
+
+As the inclusion of non-linear terms did not improve model fit, the original model was retained. Further model assessment was conducted using Wild bootstrapping with 10,000 iterations.
+
+##### Change in regression coefficients
+
+```{r, ft.align="left"}
+beta3
+```
+
+##### Change in lower 95% confidence interval
+
+```{r, ft.align="left"}
+
+lower3
+
+```
+
+##### Change in upper 95% confidence interval
+
+```{r, ft.align="left"}
+upper3
+```
+
+##### Change in Range of 95% confidence interval
+
+```{r, ft.align="left"}
+range3
+
+```
+
+##### Change in p-value significance and regression coefficient direction
+
+```{r, ft.align="left"}
+p.val3
+```
+
+##### Check the distribution of bootstrap estimates
+
+The bootstrap distribution of each coefficient appeared approximately normal and centered near the original estimate (red dashed line), suggesting that the estimates are relatively stable. No strong skewness or multimodality was observed.
+
+```{r}
+knitr::include_graphics('figures/boot.dist3.png')
+
+```
+
+#### Conclusions based on the bootstrapped model
+
+This model was inferentially reproducible. While some statistics changed by 10% or more, these differences were not meaningful with a change in standardized regression coefficients of less than 0.1. The direction of effects and statistical significance remained consistent between the reproduced and bootstrapped models.
+:::
+
+```{r}
+Assumptions_data<- bind_rows(M1Rassump, M2Rassump,M3Rassump) 
+comparison1<-comparison1 %>% mutate(Model=1, paper_ID="8")
+comparison2<-comparison2 %>% mutate(Model=2, paper_ID="8")
+comparison3<-comparison3 %>% mutate(Model=3, paper_ID="8")
+comparison<-rbind(comparison1, comparison2,comparison3)
+modfit3<-modfit3%>% mutate(Model=3, paper_ID="8")
+write.csv(modfit3, file="data/modfit_08.csv")
+write.csv(comparison, file="data/boot_08.csv")
+write.csv(repdat, file="data/repdat_8.csv")
+write.csv(Assumptions_data,file="data/Assumptions_data08.csv")
+write.csv(fdat,file="data/model_data08.csv")
+```
