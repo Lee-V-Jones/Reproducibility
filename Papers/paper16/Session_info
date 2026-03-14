@@ -1,0 +1,76 @@
+R version 4.4.2 (2024-10-31 ucrt)
+Platform: x86_64-w64-mingw32/x64
+Running under: Windows 11 x64 (build 26200)
+
+Matrix products: default
+
+
+locale:
+[1] LC_COLLATE=English_Australia.utf8  LC_CTYPE=English_Australia.utf8   
+[3] LC_MONETARY=English_Australia.utf8 LC_NUMERIC=C                      
+[5] LC_TIME=English_Australia.utf8    
+
+time zone: Australia/Brisbane
+tzcode source: internal
+
+attached base packages:
+[1] grid      stats     graphics  grDevices utils     datasets  methods  
+[8] base     
+
+other attached packages:
+ [1] ggeffects_2.3.0    qqplotr_0.0.7      influence.ME_0.9-9 performance_0.14.0
+ [5] epiR_2.0.84        survival_3.7-0     lmerTest_3.1-3     lme4_1.1-37       
+ [9] Matrix_1.7-1       cowplot_1.1.3      conflicted_1.2.0   forestplot_3.1.7  
+[13] abind_1.4-8        checkmate_2.3.2    visreg_2.7.0       effects_4.2-2     
+[17] rvest_1.0.4        blandr_0.6.0       gridExtra_2.3      htmltools_0.5.8.1 
+[21] pillar_1.11.1      jmv_2.7.0          readxl_1.4.5       httr_1.4.7        
+[25] sandwich_3.1-1     lmtest_0.9-40      zoo_1.8-14         jtools_2.3.0      
+[29] car_3.1-3          carData_3.0-5      lmboot_0.0.1       leaps_3.2         
+[33] MASS_7.3-61        psych_2.5.3        flextable_0.9.9    tables_0.9.31     
+[37] gtsummary_1.7.2    summarytools_1.1.4 broom_1.0.8        haven_2.5.5       
+[41] emmeans_1.11.1     lubridate_1.9.4    forcats_1.0.0      stringr_1.5.1     
+[45] dplyr_1.1.4        purrr_1.0.4        readr_2.1.5        tidyr_1.3.1       
+[49] tibble_3.3.0       ggplot2_4.0.1      tidyverse_2.0.0   
+
+loaded via a namespace (and not attached):
+  [1] splines_4.4.2           later_1.4.2             bitops_1.0-9           
+  [4] BiasedUrn_2.0.12        cellranger_1.1.0        jmvcore_2.6.3          
+  [7] lifecycle_1.0.4         Rdpack_2.6.4            tcltk_4.4.2            
+ [10] sf_1.0-21               pbmcapply_1.5.1         doParallel_1.0.17      
+ [13] globals_0.18.0          processx_3.8.6          lattice_0.22-6         
+ [16] insight_1.3.1           backports_1.5.0         survey_4.4-2           
+ [19] magrittr_2.0.3          rmarkdown_2.29          yaml_2.3.10            
+ [22] qqconf_1.3.2            zip_2.3.3               askpass_1.2.1          
+ [25] chromote_0.5.1          DBI_1.2.3               minqa_1.2.8            
+ [28] RColorBrewer_1.1-3      multcomp_1.4-28         pracma_2.4.6           
+ [31] nnet_7.3-19             TH.data_1.1-3           gdtools_0.4.2          
+ [34] listenv_0.9.1           units_0.8-7             parallelly_1.45.0      
+ [37] codetools_0.2-20        xml2_1.3.8              tidyselect_1.2.1       
+ [40] farver_2.1.2            broom.mixed_0.2.9.6     matrixStats_1.5.0      
+ [43] base64enc_0.1-3         broom.helpers_1.16.0    jsonlite_2.0.0         
+ [46] opdisDownsampling_1.0.1 e1071_1.7-16            Formula_1.2-5          
+ [49] iterators_1.0.14        systemfonts_1.2.3       foreach_1.5.2          
+ [52] tools_4.4.2             twosamples_2.0.1        ragg_1.4.0             
+ [55] pryr_0.1.6              Rcpp_1.0.14             glue_1.8.0             
+ [58] mnormt_2.1.1            xfun_0.52               websocket_1.4.4        
+ [61] withr_3.0.2             numDeriv_2016.8-1.1     fastmap_1.2.0          
+ [64] mitools_2.4             boot_1.3-31             openssl_2.3.3          
+ [67] caTools_1.18.3          digest_0.6.37           timechange_0.3.0       
+ [70] R6_2.6.1                estimability_1.5.1      textshaping_1.0.1      
+ [73] colorspace_2.1-1        generics_0.1.4          fontLiberation_0.1.0   
+ [76] data.table_1.17.4       robustbase_0.99-6       class_7.3-22           
+ [79] htmlwidgets_1.6.4       pkgconfig_2.0.3         gtable_0.3.6           
+ [82] S7_0.2.0                furrr_0.3.1             fontBitstreamVera_0.1.1
+ [85] scales_1.4.0            reformulas_0.4.1        knitr_1.50             
+ [88] rstudioapi_0.17.1       tzdb_0.5.0              reshape2_1.4.4         
+ [91] uuid_1.2-1              coda_0.19-4.1           nlme_3.1-166           
+ [94] nloptr_2.2.1            proxy_0.4-27            cachem_1.1.0           
+ [97] KernSmooth_2.23-24      parallel_4.4.2          vctrs_0.6.5            
+[100] promises_1.3.3          xtable_1.8-4            evaluate_1.0.3         
+[103] magick_2.8.7            mvtnorm_1.3-3           cli_3.6.5              
+[106] compiler_4.4.2          rlang_1.1.6             classInt_0.4-11        
+[109] ps_1.9.1                plyr_1.8.9              stringi_1.8.7          
+[112] pander_0.6.6            fontquiver_0.2.1        rapportools_1.2        
+[115] hms_1.1.3               future_1.58.0           rbibutils_2.3          
+[118] gt_1.0.0                memoise_2.0.1           DEoptimR_1.1-4         
+[121] officer_0.6.10         
