@@ -1,0 +1,322 @@
+---
+title: "Paper 12: The bacterial communities of the small intestine and stool in children with short bowel syndrome"
+author: Lee Jones \- Senior Biostatistician \- Statistical Review
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+format:
+  html:
+    embed-resources: true
+    theme: journal
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message = FALSE)
+
+```
+
+```{css}
+a { color: blue !important;}
+h1 {font-size: 22px !important;}
+```
+
+```{r}
+normalQ<- "QQ-plot looks roughly normal."
+notnormalQ<- "QQ-plot indicates the residuals are not normally distributed."
+vifprob<-"Overall, when taking into account VIF and SE, the model has collinearity problems."
+vifnoprob<-"Overall, when taking into account VIF and SE, the model does not have collinearity issues."
+indDesNo<-"The study design is not independent and should be assessed using linear mixed models or generalized estimating equations."
+indDesYes<-"The study design seems to be independent."
+homYes<-"There is no distinct funnelling pattern observed, supporting homoscedasticity of residuals."
+homNo<-"The residuals vs. fitted plot is heteroscedastic with funnelling shape."
+somehet<-"Some heteroscedasticity is present in plots, and a sensitivity analysis using weighted or robust regression or wild bootstrapping is recommended."
+Cooksnoproblem<-"Cook's Distance and other influence diagnostics indicated no observations of concern."
+linyes<-"No linearity violation was observed in either plots or tests."
+linno<-"Plots and tests show an unaccounted non-linear relationship may be present."
+linplotno<-"Plots show an unaccounted non-linear relationship may be present."
+lintestno<-"Tests show an unaccounted non-linear relationship may be present."
+linout<-"Linearity issues are likely due to outliers within the data."
+p_repro<-"The p-values in this model were reproduced with mean differences for p-values close to zero."
+OutliersYes <-"Outliers present with high Cook's distance values indicating a sensitivity analysis should be performed to assess the change in the regression coefficients."
+MostCompRep<- "This model was mostly computationally reproducible, with minor rounding errors. P-values were reproduced and had the same interpretation, and regression coefficients did not change direction."
+CompRep<-"This model was computationally reproducible, with all reported statistics that were assessed being reproducible."
+NotCompRep<-"This model was not computationally reproducible."
+ Nosens<-"As this model was not computationally reproducible, inferential reproducibility was not considered, since the original analyses could not be reproduced and therefore, statistical assumptions could not be meaningfully compared or interpreted."
+
+evalAump<-"Evaluate the assumptions of the linear regression models by examining residuals, identifying influential outliers, and assessing multicollinearity among predictors. If any assumptions are violated, address them using appropriate methods."
+use_VIF<-"Formally assess multicollinearity using variance inflation factors (VIFs) and examination of coefficient standard errors."
+uniqueID <- "Include a unique person identifier (ID) in the dataset to ensure each individual can be distinctly identified."
+Scat<-"Consider using Scatterplots to visualise the relationships between variables."
+Box<-"Consider using box-plots to visualise the data."
+AdjR2<- "Adjusted R^2^ should be reported for multivariable models."
+datD<- "Include a data dictionary."
+Includedata<- "Include data to reproduce all analyses in the paper and supplementary files."
+Fullydescribe<- "Fully describe the model used in the linear regression."
+DetailAssump<-"Provide details of linear regression assumption checks."
+Code<- "Consider creating a reproducible analysis workflow and sharing the code."
+Update_dataAvail<-"Update the data availability statement to reflect the status of the data."
+coef95<-"Report linear regression coefficients and 95% confidence intervals."
+Analysis<-"Provide tables in the Supporting Information that present all analyses conducted in the paper, including full model outputs such as regression coefficients and all variables used for adjustment."
+Missing<-"Provide a clear description of the amount and pattern of missing data, along with the methods used to address missingness in the analyses."
+Modelling<-"Ensure that the modelling process is clearly described and applied consistently throughout the paper. The type of model and its key specifications should be included in the footnotes of the tables to improve transparency."
+File_format<- "Data underlying statistical analyses should be provided in a standard data format (e.g., CSV, XLSX, or similar) so it is machine readable."
+Data_format<-"Provide the data in a recognised long or wide format, with a unique participant identifier included to allow assessment of repeated measures and clustering."
+Program<-"Specify the statistical software package, version, and any relevant options, procedures, or settings required to reproduce the analysis."
+Stepwise<-"Ensure complete reporting of the stepwise model selection procedure, including the direction of selection (forward, backward, or bidirectional) and the criteria for variable entry and removal."
+Multiple_test<-"Acknowledge the issue of multiple testing in the results and/or limitations section, including whether adjustments were applied or why none were considered necessary."
+Effect_size<-"Place greater emphasis on the magnitude and practical relevance of regression coefficients, including their confidence intervals, rather than focusing predominantly on statistical significance."
+```
+
+# References
+
+Zeichner SL, Mongodin EF, Hittle L, Huang S-H, Torres C (2019) The bacterial communities of the small intestine and stool in children with short bowel syndrome. PLoS ONE 14(5): e0215351. <https://doi.org/10.1371/journal.pone.0215351>
+
+L. Zeichner, Steven; F. Mongodin, Emmanuel; Hittle, Lauren; Huang, Szu-Han; Torres, Clarivet (2019). S1 Table. PLOS ONE. Dataset. <https://doi.org/10.1371/journal.pone.0215351.s001>
+
+# Disclosure
+
+This reproducibility project was conducted to the best of our ability, with careful attention to statistical methods and assumptions. The research team comprises four senior biostatisticians (three of whom are accredited), with 20 to 30 years of experience in statistical modelling and analysis of healthcare data. While statistical assumptions play a crucial role in analysis, their evaluation is inherently subjective, and contextual knowledge can influence judgements about the importance of assumption violations. Differences in interpretation may arise among statisticians and researchers, leading to reasonable disagreements about methodological choices.
+
+Our approach aimed to reproduce published analyses as faithfully as possible, using the details provided in the original papers. We acknowledge that other statisticians may have differing success in reproducing results due to variations in data handling and implicit methodological choices not fully described in publications. However, we maintain that research articles should contain sufficient detail for any qualified statistician to reproduce the analyses independently.
+
+# Methods used in our reproducibility analyses
+
+There were two parts to our study. First, 100 articles published in *PLOS ONE* were randomly selected from the health domain and sent for post-publication peer review by statisticians. Of these, 95 included linear regression analyses and were therefore assessed for reporting quality. The statisticians evaluated what was reported, including regression coefficients, 95% confidence intervals, and p-values, as well as whether model assumptions were described and how those assumptions were evaluated. This report provides a brief summary of the initial statistical review.
+
+The second part of the study involved reproducing linear regression analyses for papers with available data to assess both computational and inferential reproducibility. All papers were initially assessed for data availability and the statistical software used. From those with accessible data, the first 20 papers (from the original random sample) were evaluated for computational reproducibility. Within each paper, individual linear regression models were identified and assigned a unique number. A maximum of three models per paper were selected for assessment. When more than three models were reported, priority was given to the final model or the primary models of interest as identified by the authors; any remaining models were selected at random.
+
+To assess computational reproducibility, differences between the original and reproduced results were evaluated using absolute discrepancies and rounding error thresholds, tailored to the number of decimal places reported in each paper. Results for each reported statistic, e.g., regression coefficient, were categorised as *Reproduced*, *Incorrect Rounding*, or *Not Reproduced*, depending on how closely they matched the original values. Each paper was then classified as *Reproduced*, *Mostly Reproduced*, *Partially Reproduced*, or *Not Reproduced*. The mostly reproduced category included cases with minor rounding or typographical errors, whereas partially reproduced indicated substantial errors were observed, but some results were reproduced.
+
+For models deemed at least partially computationally reproducible, inferential reproducibility was further assessed by examining whether statistical assumptions were met and by conducting sensitivity analyses, including bootstrapping where appropriate. We examined changes in standardized regression coefficients, which reflect the change in the outcome (in standard deviation units) for a one standard deviation increase in the predictor. Meaningful differences were defined as a relative change of 10% or more, or absolute differences of 0.1 (moderate) and 0.2 (substantial). When non-linear relationships were identified, inferential reproducibility was assessed by comparing model fit measures, including R², Akaike Information Criterion (AIC), and Bayesian Information Criterion (BIC). When the Gaussian distribution was not appropriate for the dependent variable, alternative distributions were considered, and model fit was evaluated using AIC and BIC.
+
+# Summary from statistical review
+
+This paper examined gut dysbiosis in children with short bowel syndrome, comparing those with adverse clinical features (parenteral nutrition dependence, shorter bowel length, and absence of an ileocecal valve) with those without parenteral nutrition dependence. Regression analyses assessed associations between Shannon diversity and bowel length, parenteral nutrition status, and their interaction. The statistical approach was described primarily in mathematical terms rather than in clear, basic terms. Visual inspection of scatterplots suggested potentially non-linear relationships. Model assumptions were not reported as having been assessed, outliers were removed without clear justification, and results were discussed largely in terms of direction of association rather than the magnitude or the clinical relevance of effect size.
+
+# Data availability and software used
+
+The authors provided links to sequence data on an external website. While demographic data were also available from this site, it was not possible to create the outcome variable (species diversity) without additional instructions. Although the unproccessed dataset is technically accessible, the analyses cannot be reliably reproduced without the syntax used to generate the species diversity variable. Analyses of the linear regression models were conducted using SAS.
+
+# Regression sample
+
+Two linear regression models were presented in Figure 1. The outcome variable was species diversity, with bowel length and parenteral nutrition as the main effects, and an interaction term included. Separate models were fitted for jejunal and stool samples.
+
+# Computational reproducibility results
+
+This paper could not be computationally reproduced because insufficient detail was provided to derive the species diversity variable from the genetic data. A bioinformatician attempted to reproduce the results; however, the variable could not be derived from the available genetic data due to unclear methodological steps, older software versions, and the absence of the analysis code. To enable reproducibility, the code used to generate the outcome variable should be provided. Additionally, the derived data used in the linear regression analyses should be supplied in wide format to facilitate access.
+
+# Inferential reproducibility results
+
+As this paper was not computationally reproducible. Therefore, inferential reproducibility was not considered.
+
+# Recommended changes
+
+-   `r evalAump`
+-   `r Code`
+-   Provide the secondary data created from the genetic data in an accessible format to ensure reusability.
+
+```{r}
+repdat <- data.frame(
+  paper_ID = as.numeric(12),
+  Title = as.character("The bacterial communities of the small intestine and stool in children with short bowel syndrome."),
+  Summary = as.character("This paper examined gut dysbiosis in children with short bowel syndrome, comparing those with adverse clinical features (parenteral nutrition dependence, shorter bowel length, and absence of an ileocecal valve) with those without parenteral nutrition dependence. Regression analyses assessed associations between Shannon diversity and bowel length, parenteral nutrition status, and their interaction. The statistical approach was described primarily in mathematical terms rather than in clear, basic terms. Visual inspection of scatterplots suggested potentially non-linear relationships. Model assumptions were not reported as having been assessed, outliers were removed without clear justification, and results were discussed largely in terms of direction of association rather than the magnitude or the clinical relevance of effect size."),
+  Regression_sample = as.character("Two linear regression models were presented in Figure 1. The outcome variable was species diversity, with bowel length and parenteral nutrition as the main effects, and an interaction term included. Separate models were fitted for jejunal and stool samples."),
+  Data_comments = as.character("The authors provided links to sequence data on an external website. While demographic data were also available from this site, it was not possible to create the outcome variable (species diversity) without additional instructions. Although the full dataset is technically accessible, the analyses cannot be reliably reproduced without the syntax used to generate the species diversity variable."),
+  Data_Availability_Statement = as.character("Sequence data generated in this study were deposited with GenBank and linked to BioProject number BioProject ID: PRJNA492751 in the NCBI BioProject database."),
+  DAS_correct = as.character("Yes"),
+  Data_Notionally_Available = as.character("Yes"),
+  Ethics_required_access_data = as.character("NA"),
+  Permission_required_access_data = as.character("NA"),
+  Data_Available = as.character("Yes"),
+  Anyrawdata = as.character ("Yes"),
+  HaveSupInfo = as.character ("Yes"),
+  Data_location = as.character("Genebank"),
+  Accessible_data_badge  = as.character("Yes"),
+  Data_Reason_not_found  = as.character("Unable to locate species diversity variable, it needs to be created from the genetics data but there are is not enough detail in paper."),
+  Data_Dictionary = as.character("Yes"),
+  Format_file = as.character("Website"),
+  Format_data  = as.character("Long"),
+  Package = as.character("SAS"),
+  Recommended_changes = as.character("Evaluate the assumptions of the linear regression models by examining residuals, identifying influential outliers, and assessing multicollinearity among predictors. If any assumptions are violated, address them using appropriate methods. Consider creating a reproducible analysis and sharing the code. Provide seconday secondary data, created from the genetic data in  an accessable format."),
+  Reproduced = as.character("No"),
+  Rep_comment = as.character("Not enough detail to create variable needed for use in linear regression analysis"),
+  Rating = as.numeric(0),
+  Unclear_N = as.character("No"),
+  Difficult_matching_variables = as.character ("Yes"),
+  Rounding = as.character ("NA"),
+  Unclear_model = as.character ("No"),
+  Typo = as.character ("NA"),
+  Data_Cleaning_required = as.character ("Yes"),
+  Data_Reformatting_required = as.character ("Yes"),
+  R1 = as.character("Not reproduced"),
+  R2 = as.character("Not reproduced"),
+  R3 = as.character("NA"),
+  E1 = as.character("NA"),
+  E2 = as.character("NA"),
+  E3 = as.character("NA"),
+  E1_Dist = as.character("NA"),
+  E2_Dist  = as.character("NA"),
+  E3_Dist  = as.character("NA"),
+  E1_Mixed = as.character("NA"),
+  E2_Mixed  = as.character("NA"),
+  E3_Mixed = as.character("NA"),
+  E1_Linkfunction = as.character("NA"),
+  E2_Linkfunction = as.character("NA"),
+  E3_Linkfunction  = as.character("NA"),
+  E1_RSE = as.character("NA"),
+  E2_RSE  = as.character("NA"),
+  E3_RSE  = as.character("NA"),
+  E1_Nonlinear = as.character("NA"),
+  E2_Nonlinear  = as.character("NA"),
+  E3_Nonlinear  = as.character("NA"),
+  E1_Transformation = as.character("NA"),
+  E2_Transformation  = as.character("NA"),
+  E3_Transformation  = as.character("NA"),
+  E1_Regularisation = as.character("NA"),
+  E2_Regularisation = as.character("NA"),
+  E3_Regularisation  = as.character("NA"),
+  E1_boot = as.character("NA"),
+  E2_boot  = as.character("NA"),
+  E3_boot  = as.character("NA"),
+  Comp_reproduce = as.character("No"),
+  Infer_reproduce = as.character("NA"),
+  Comp_comment = as.character("This paper could not be computationally reproduced because insufficient detail was provided to derive the species diversity variable from the genetic data. A bioinformatician attempted to reproduce the results; however, the variable could not be derived from the available genetic data due to unclear methodological steps, older software versions, and the absence of the analysis code. To enable reproducibility, the code used to generate the outcome variable should be provided. Additionally, the data used in the linear regression analyses should be supplied in wide format to facilitate access."),
+  Infer_comment = as.character("NA"),
+  stringsAsFactors = FALSE
+)
+
+write.csv(repdat, file="data/repdat_12.csv")
+
+
+
+
+```
+
+```{r pack}
+library(tidyverse)
+library(emmeans)
+library(haven)#spss
+library(broom) # for regression tables
+library(summarytools) # for tables
+library (gtsummary) #for models 
+library(tables) # for tables
+library (flextable)
+library(psych)
+library(MASS)
+library (leaps)
+library(lmboot)
+library(car)
+library(jtools)
+library(lmtest)
+library(sandwich)
+library(readxl)
+library(jmv)
+library(pillar)
+library(htmltools)
+library(gridExtra)
+library(blandr)
+library(rvest)
+library(effects)
+library(visreg)
+library(forestplot)
+library(conflicted)
+library(httr)
+library(rentrez)
+
+
+conflicts_prefer(dplyr::filter)
+# capture session information in a text file
+sessionInfo() %>% capture.output(file="session_info.txt")
+```
+
+```{r, eval=FALSE}
+# this extracts the demographic data
+
+# Function to extract the attributes table from a BioSample page
+extract_biosample_table <- function(biosample_id) {
+  # Construct the URL for the BioSample
+  url <- paste0("https://www.ncbi.nlm.nih.gov/biosample/", biosample_id)
+  
+  # Read the webpage content
+  webpage <- read_html(url)
+  
+  # Attempt to find any table within the page
+  tables <- webpage %>%
+    html_nodes("table") %>%  # Select all tables on the page
+    html_table(fill = TRUE)
+  
+  # Check if any tables were found
+  if (length(tables) > 0) {
+    attributes_table <- tables[[1]]  # Assuming the first table is the one you need
+    attributes_table$BioSample_ID <- biosample_id  # Add the BioSample ID to the table
+    return(attributes_table)
+  } else {
+    cat("No tables found on the page for BioSample ID:", biosample_id, "\n")
+    return(NULL)
+  }
+}
+
+
+# List of BioSample IDs
+biosample_ids <- c("10133621", "10133620", "10133619", "10133618", "10133617", "10133616", 
+                   "10133615", "10133614", "10133613", "10133612", "10133611", "10133610", 
+                   "10133609", "10133608", "10133607", "10133606", "10133605", "10133604", 
+                   "10133603", "10133602", "10133601", "10133600", "10133599", "10133598", 
+                   "10133597", "10133596", "10133595", "10133594", "10133593", "10133592", 
+                   "10133591", "10133590", "10133589", "10133588", "10133587", "10133586", 
+                   "10133585", "10133584", "10133583", "10133582", "10133581", "10133580", 
+                   "10133579", "10133578", "10133577", "10133576", "10133575", "10133574", 
+                   "10133573", "10133572", "10133571", "10133570")
+
+# Initialize an empty list to store all attributes tables
+all_biosample_tables <- list()
+
+# Loop through each BioSample ID and extract the attributes table
+for (id in biosample_ids) {
+  biosample_table <- extract_biosample_table(id)
+  if (!is.null(biosample_table)) {
+    all_biosample_tables[[id]] <- biosample_table
+  }
+}
+
+# Combine all the tables into one data frame
+combined_tables <- bind_rows(all_biosample_tables)
+
+# Assuming the first two columns are "Attribute" and "Value"
+colnames(combined_tables) <- c("Attribute", "Value", "BioSample_ID")
+
+# Remove any rows where "Attribute" is "Attribute", which indicates a row with column names
+cleaned_data <- combined_tables %>%
+  filter(Attribute != "Attribute")
+
+
+# Reshape the data to have attributes as columns
+dat <- cleaned_data %>%
+  pivot_wider(names_from = Attribute, values_from = Value)
+
+```
+
+```{r, results='hide'}
+
+# this extracts the excel data form website, this seem to be data from models rather than raw data
+
+# Define the URL of the file
+url <- "https://doi.org/10.1371/journal.pone.0215351.s001"
+
+
+# Download the file to a temporary location
+temp_file <- tempfile(fileext = ".xlsx")
+download.file(url, temp_file, mode = "wb")
+
+# Get all sheet names
+sheet_names <- excel_sheets(temp_file)
+
+# Create datasets for each sheet with names same as sheet names
+for (sheet in sheet_names) {
+  assign(sheet, read_excel(temp_file, sheet = sheet))
+}
+
+
+
+
+
+```
