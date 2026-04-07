@@ -1,0 +1,8 @@
+"Term","O_lower","R_lower","Change.lci","Reproduce.lower"
+"Intercept",83.52,"83.5163","-0.0037","Reproduced"
+"Age",1.46,"1.4508","-0.0092","Incorrect Rounding"
+"BMI:",NA,"","",NA
+"Overweight – Normal",4.71,"4.7132","0.0032","Reproduced"
+"Obese – Normal",9.5,"9.4956","-0.0044","Reproduced"
+"Group:",NA,"","",NA
+"Intervention – Control",3.77,"-3.7664","-7.5364","Not Reproduced"
