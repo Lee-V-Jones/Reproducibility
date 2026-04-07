@@ -1,0 +1,1706 @@
+---
+title: "Challenges in the Computational Reproducibility of Linear Regression Analyses: An Empirical Study"
+format:
+  plos-pdf:
+    template-partials:
+      - before-bib.tex
+    number-sections: false
+    keep_tex: TRUE
+author:
+  - name: Lee Jones
+    affiliations:
+      - ref: aff1
+      - ref: aff2
+      - ref: aff3
+    corresponding: true
+    email: lee.jones@qut.edu.au
+  - name: Adrian Barnett
+    affiliations:
+      - ref: aff2
+  - name: Gunter Hartel
+    affiliations:
+       - ref: aff3
+  - name: Dimitrios Vagenas
+    affiliations:
+       - ref: aff1
+affiliations:
+  - id: aff1
+    name:  Research Methods Group, Faculty of Health, School of Public Health and Social Work, Queensland University of Technology
+    city: Kelvin Grove
+    state: Queensland
+    country: Australia
+  - id: aff2
+    name: AusHSI, Centre for Healthcare Transformation, Faculty of Health, School of Public Health and Social Work, Queensland University of Technology
+    city: Kelvin Grove
+    state: Queensland
+    country: Australia
+  - id: aff3
+    name: Statistics Unit, QIMR Berghofer Medical Research Institute
+    city:  Herston
+    state: Queensland
+    country: Australia
+abstract: |  
+ 
+ 
+ \textbf{Background}:
+  Reproducibility concerns in health research have grown, as many published results fail to be independently reproduced. Achieving computational reproducibility, where others can replicate the same results using the same methods, requires transparent reporting of statistical tests, models, and software use. While data-sharing initiatives have improved accessibility, the actual usability of shared data for reproducing research findings remains underexplored. Addressing this gap is crucial for advancing open science and ensuring that shared data meaningfully support reproducibility and enable collaboration, thereby strengthening evidence-based policy and practice.\   
+ \noindent \textbf{Methods}:
+     A random sample of 95 \textit{PLOS ONE} health research papers from 2019 reporting linear regression was assessed for data-sharing practices and computational reproducibility. Data were accessible for 43 papers. From the randomly selected sample, the first 20 papers with available data were assessed for computational reproducibility. Three regression models per paper were reanalysed.
+  
+  \noindent \textbf{Results}:
+    Of the 95 papers, 68 reported having data available, but 25 of these lacked the data required to reproduce the linear regression models. Only eight of 20 papers we analysed were computationally reproducible. A major barrier to reproducing the analyses was the great difficulty in matching the variables described in the paper to those in the data. Papers sometimes failed to be reproduced because the methods were not adequately described, including variable adjustments and data exclusions. \
+  \noindent  \textbf{Conclusion}:
+    More than half (60%) of analysed studies were not computationally reproducible, raising concerns about the credibility of the reported results and highlighting the need for greater transparency and rigour in research reporting. When data are made available, authors should provide a corresponding data dictionary with variable labels that match those used in the paper. Analysis code, model specifications, and any supporting materials detailing the steps required to reproduce the results should be deposited in a publicly accessible repository or included as supplementary files. To increase the reproducibility of statistical results, we propose a Model Location and Specification Table (MLast), which tracks where and what analyses were performed. In conjunction with a data dictionary, MLast enables the mapping of analyses, greatly aiding computational reproducibility.\
+bibliography: bibliography1.bib
+header-includes:
+ - \usepackage{longtable,booktabs}
+ - \usepackage[T1]{fontenc}
+ - \usepackage{changepage}
+ - \usepackage{float}
+ - \raggedbottom
+ - \usepackage{makecell}
+ - \usepackage{pbox}
+ - \usepackage{colortbl}
+ - \newenvironment{widestuff}{\begin{adjustwidth}{-2.25in}{0in}\raggedright}{\end{adjustwidth}}
+ - \usepackage{array}
+ - \usepackage{tabularx}
+ - \usepackage{caption}% fix vertical spacing of table captions
+ - \usepackage{multirow} 
+ - \usepackage{varwidth}
+ - \newcolumntype{M}{>{\begin{varwidth}{4cm}}l<{\end{varwidth}}} %M is for Maximal column
+ - \usepackage{lmodern}
+ - \newcommand{\beginsupplement}{\setcounter{table}{0}  \renewcommand{\thetable}{S\arabic{table}} \setcounter{figure}{0} \renewcommand{\thefigure}{S\arabic{figure}}}
+ - \usepackage[table]{xcolor}
+ - \definecolor{lightgray}{gray}{0.94}
+ - \let\oldtabular\tabular
+ - \let\endoldtabular\endtabular
+ - \renewenvironment{tabular}{\rowcolors{2}{lightgray}{white}\oldtabular}{\endoldtabular}
+ - \usepackage{lineno}
+ -  \linenumbers
+ -  \renewcommand\makeLineNumber{}
+ -  \usepackage{amsmath,amssymb}
+ - \setlength{\parindent}{0.5cm} 
+ - \setlength{\parskip}{0pt} 
+
+editor: 
+  markdown: 
+    wrap: sentence
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message = FALSE)
+
+```
+
+```{r data}
+library(knitr)
+library(tidyverse)
+library(summarytools)
+library(flextable)
+library(officer)
+library(irrCAC)
+library(xtable)
+library(bookdown)
+library(formatR)
+library(PropCIs)
+library(DescTools)
+library(rlist)
+library (gtsummary)
+library(car)
+library(lme4)
+library(DiagrammeR)
+library(webshot2)
+library(kableExtra)
+library(chromote)
+library(binom)
+library(brms)
+library(tidybayes)
+library(posterior)
+library(bayesplot)
+
+options(knitr.kable.NA = "")
+
+
+
+# function to round and give exact number of decimal places
+Sround <-
+  function(x, k)
+    trimws(format(round(x, k), nsmall = k))
+
+
+#GT summary theme
+my_theme <-
+  list(
+       "pkgwide-fn:pvalue_fun" = function(x)
+      style_pvalue(x, digits = 3),
+    "pkgwide-fn:prependpvalue_fun" = function(x)
+      style_pvalue(x, digits = 3, prepend_p = TRUE),
+      #"tbl_summary-str:continuous_stat" = "{mean} ({SD})",
+    "tbl_summary-str:categorical_stat" = "{n} ({p}%)"
+  )
+set_gtsummary_theme(my_theme)
+
+
+# capture session information in a text file
+sessionInfo() %>% capture.output(file="Computational_session_info.txt")
+
+
+# function so that numbers can be printed as words
+int_to_words <- function(x) {
+    if (x < 0 || x > 100) {
+        stop("Number out of range. Please provide a number between 0 and 100.")
+    }
+    
+    words_1_to_19 <- c('one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 
+                       'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 
+                       'eighteen', 'nineteen')
+    tens_words <- c('twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety')
+    
+    if (x == 0) {
+        return("zero")
+    } else if (x <= 19) {
+        return(words_1_to_19[x])
+    } else if (x == 100) {
+        return("one hundred")
+    } else {
+        tens <- floor(x / 10)
+        units <- x %% 10
+        
+        if (units == 0) {
+            return(tens_words[tens - 2])
+        } else {
+            return(paste(tens_words[tens - 1], words_1_to_19[units] , sep = "-"))
+        }
+    }
+}
+
+
+  
+```
+
+```{r, results='hide'}
+
+library(readxl)
+
+# Read data sheet
+comp <- read_excel(
+  "data/Reproducibility_wide_with_dictionary.xlsx",
+  sheet = "Data"
+) %>% 
+  mutate(Format_file = case_when( Format_file == "dta" ~ "Stata",Format_file == "sav" ~ "SPSS",  Format_file == "tiff" ~ "Image", Format_file == "docx" ~ "Word",.default = Format_file))  
+ 
+
+
+
+
+# Read data sheet
+Rep_long <- read_excel(
+  "data/Reproducibility_long_with_dictionary.xlsx",
+  sheet = "Data"
+)
+
+
+Rep_long <- Rep_long %>% 
+     mutate(Reproducibility_status = factor(Reproducibility_status, levels = c("Reproduced", "Mostly reproduced", "Partially reproduced", "Not reproduced")))  
+     
+
+df<-read.csv(file="tables/df.csv") %>% rename("n (%)"= n)
+
+
+# Read data sheet
+model_data <- read_excel(
+  "data/model_data_long_with_dictionary.xlsx",
+  sheet = "model_data_long"
+)
+
+
+# create counts per paper per statistic
+
+process_category_data <- function(data, category_vars) {
+  results <- lapply(category_vars, function(var) {
+    var_sym <- sym(var) # Dynamically create a symbol for tidy evaluation
+    
+    data %>%
+      group_by(Model, paper_ID) %>%
+      summarise(
+        total_count = sum(!is.na(.data[[var]])),  # Count non-NA rows
+        level_counts = list(as.data.frame(table(get(var), useNA = "ifany"))), # Use get() for standard evaluation
+        .groups = "drop"
+      ) %>%
+      unnest(level_counts) %>%
+      pivot_wider(
+        names_from = Var1,  # Use the default name created by table()
+        values_from = Freq,
+        values_fill = 0 # Fill missing categories with 0
+      ) %>%
+      rowwise() %>%
+      mutate(
+        # Dynamically sum only existing columns for recalculating total count
+        total_count = sum(c_across(any_of(c("Not Reproduced", "Incorrect Rounding", "Reproduced"))), na.rm = TRUE)
+      ) %>%
+      ungroup() %>%
+      mutate(
+        # If total_count <= 0, set other columns to NA
+        across(any_of(c("Not Reproduced", "Incorrect Rounding", "Reproduced")), 
+               ~ if_else(total_count <= 0, NA_real_, .)),
+        # Handle the `NA` column safely
+        `NA` = if ("NA" %in% names(.)) if_else(total_count > 0, 0, .data$`NA`),
+        type = var  # Add identifying variable
+      )
+  })
+  
+  # Combine all results into a single dataset
+  bind_rows(results)
+}
+
+
+Reproduced<- process_category_data(
+  data = model_data,
+  category_vars = c("result_O_est_category", "result_O_lower_category", "result_O_upper_category", "result_O_se_category", "result_O_p.value_category",
+                    "result_O_t_category", "result_O_r2_category", "result_O_r2Adj_category"  , "result_O_f_category","result_O_stdEst_category" )) %>%
+  mutate( across( c(`Not Reproduced`, `Incorrect Rounding`, `Reproduced`),
+      ~ if_else(total_count > 0 & is.na(.), 0, .)))
+
+
+
+# identfy how many papers have data avaiallble and has been assessed for reprducibility
+check<-comp %>% dplyr::select(paper_ID,  Data_Notionally_Available, Data_Available,  Comp_reproduce, Rating) %>% filter(Data_Available=="Yes")
+complete<-check %>% filter(!is.na(Comp_reproduce))
+
+Dat_Availability_Statement<-comp %>% dplyr::select(paper_ID, Data_Notionally_Available, Data_Availability_Statement, Data_Available) 
+
+
+#cleaning
+checkdataformat<-comp %>% dplyr::select (paper_ID, Data_Available,Format_file)
+
+               
+
+               
+
+n_total <- nrow(comp)
+n_havedata  <-  as.data.frame(Freq(comp$Data_Notionally_Available)) %>% filter(level=="Yes") %>% pull(freq)
+n_havedatapcnt <-  as.data.frame(Freq(comp$Data_Notionally_Available)) %>% filter(level=="Yes") %>% 
+  select (perc) %>% mutate(perc= round(perc*100),0) %>% pull(perc)
+
+n_havenodata <-  as.data.frame(Freq(comp$Data_Notionally_Available)) %>% filter(level=="No") %>% pull(freq)
+n_havenodatapcnt <-  as.data.frame(Freq(comp$Data_Notionally_Available)) %>% filter(level=="No") %>% 
+  select (perc) %>% mutate(perc= round(perc*100),0) %>% pull(perc)
+
+
+
+n_reported <-  as.data.frame(Freq(comp$Data_Available)) %>% filter(level=="Yes") %>% pull(freq)
+n_reportedpcnt <-  as.data.frame(Freq(comp$Data_Available)) %>% filter(level=="Yes") %>% 
+  select (perc) %>% mutate(perc= round(perc*100),0) %>% pull(perc)
+
+  
+crosstabDA <- as.data.frame(table(comp$Data_Notionally_Available, comp$Data_Available)) %>% filter(Var1=="Yes" & Var2=="Yes") %>% pull(Freq)
+crosstabDNA <- as.data.frame(table(comp$Data_Notionally_Available, comp$Data_Available)) %>% filter(Var1=="Yes" & Var2=="No") %>% pull(Freq)
+
+
+n_done<-comp %>%  filter(Comp_reproduce=="Yes"|Comp_reproduce=="No") %>% nrow
+n_Repo <- comp %>%  filter(Comp_reproduce == "Yes") %>% nrow
+n_Repopcnt<-Sround(n_Repo/n_done*100,0) 
+n_notRepo<-comp %>%  filter(Comp_reproduce == "No") %>% nrow
+n_notRepopcnt<-Sround(n_Repo/n_done*100,0) 
+
+n_RepoInfer<- comp %>%  filter(Infer_reproduce == "Yes") %>% nrow
+n_notRepoInfer<- comp %>%  filter(Infer_reproduce == "No") %>% nrow
+n_RepoInferpcnt<-Sround(n_RepoInfer/(n_RepoInfer + n_notRepoInfer)*100,0) 
+n_notRepoInferpcnt<-Sround(n_notRepoInfer/(n_RepoInfer + n_notRepoInfer)*100,0) 
+
+
+
+  at_least_partial  <-  comp %>%  filter(any_reproduced == "TRUE") %>% nrow
+  only_not_reproduced  <- comp %>%  filter(any_reproduced == "FALSE") %>% nrow
+# count number of reproduce in paper
+
+
+
+
+sum_or_na <- function(x) {
+  if (all(is.na(x))) NA_real_ else sum(x, na.rm = TRUE)
+}
+
+term_map <- c(
+  result_O_est_category     = "B",
+  result_O_lower_category   = "Lower CI",
+  result_O_upper_category   = "Upper CI",
+  result_O_se_category      = "SE",
+  result_O_t_category       = "t",
+  result_O_p.value_category = "p-value",
+  result_O_r2_category      = "R2",
+  result_O_r2Adj_category   = "R2Adj",
+  result_O_f_category       = "F",
+  result_O_stdEst_category  = "Std_B"
+)
+
+term_levels <- c("B", "Lower CI", "Upper CI", "SE", "t", "p-value", "R2", "R2Adj", "F", "Std_B")
+
+Reproduced_model <- Reproduced %>%
+  group_by(paper_ID, type) %>%
+  summarise(
+    total_count        = sum_or_na(.data$total_count),
+    Not_Reproduced     = sum_or_na(.data$`Not Reproduced`),
+    Incorrect_Rounding = sum_or_na(.data$`Incorrect Rounding`),
+    Reproduced         = sum_or_na(.data$Reproduced),
+    .groups = "drop"
+  ) %>%
+  rename(Terms = type) %>%
+  mutate(
+    Terms = if_else(Terms %in% names(term_map), unname(term_map[Terms]), Terms),
+    Terms = factor(Terms, levels = term_levels)
+  ) %>%
+  arrange(paper_ID, Terms)
+
+
+
+# Split the data by `type`
+split_data <- Reproduced_model %>% 
+  group_split(Terms, .keep = TRUE)
+
+# Assign each split dataset a name dynamically
+split_names <- unique(Reproduced_model$Terms)
+names(split_data) <- split_names
+
+# Create datasets in the global environment
+list2env(split_data, envir = .GlobalEnv)
+
+
+# Reshape to long format
+Reproduced_model_long <- Reproduced_model %>%
+  pivot_longer(
+    cols = c( "Reproduced", "Incorrect_Rounding", "Not_Reproduced"),  # Columns to pivot
+    names_to = "category",    # New column for variable names
+    values_to = "count"       # New column for values
+  )
+
+
+
+# For Reproduced
+paperrep_Reproduced <- Reproduced_model %>%
+  group_by(Terms) %>%
+  summarise(
+    reproduced = sum(Reproduced[total_count > 0], na.rm = TRUE),
+      .groups = "drop"
+  ) 
+
+# For Not Reproduced
+paperrep_NotReproduced <- Reproduced_model %>%
+  group_by(Terms) %>%
+  summarise(
+    Not_Reproduced = sum(Not_Reproduced[total_count > 0], na.rm = TRUE),
+        .groups = "drop"
+  ) 
+
+# For Incorrect Rounding
+paperrep_IncorrectRounding <- Reproduced_model %>%
+  group_by(Terms) %>%
+  summarise(
+    Incorrect_Rounding = sum(Incorrect_Rounding[total_count > 0], na.rm = TRUE),
+       .groups = "drop"
+  )
+
+
+
+paperrep_final <- paperrep_Reproduced %>%
+    left_join(paperrep_IncorrectRounding
+    ,
+    by = "Terms"
+  ) %>%
+  left_join(paperrep_NotReproduced
+    ,
+    by = "Terms"
+  )
+
+
+
+
+countstatistics <- Reproduced_model %>%
+   group_by(Terms) %>%
+  summarise(
+    Papers = sum(total_count > 0, na.rm = TRUE), 
+    N = sum(total_count, na.rm = TRUE)) %>% 
+    ungroup %>% mutate(Terms=case_when(Terms=="P"~ "p-value", TRUE~Terms))
+
+
+countstatistics <- countstatistics %>% 
+  full_join(paperrep_final, by = "Terms") %>% 
+  relocate(N, .after = last_col()) %>% 
+  mutate( pctNR = ifelse(is.na(N) | N == 0, 0, Sround(Not_Reproduced / N*100, 0))) %>% 
+  mutate(Not_Reproduced=paste0(Not_Reproduced, " (", pctNR, ")")) %>% dplyr::select(-pctNR) %>% 
+ mutate( pctIR = ifelse(is.na(N) | N == 0, 0, Sround(Incorrect_Rounding / N*100, 0))) %>% 
+  mutate(Incorrect_Rounding=paste0(Incorrect_Rounding, " (", pctIR, ")")) %>% dplyr::select(-pctIR) %>% 
+mutate(pctR = ifelse(is.na(N) | N == 0, 0, Sround(reproduced / N*100, 0))) %>% 
+  mutate(reproduced=paste0(reproduced, " (", pctR, ")")) %>% dplyr::select(-pctR) 
+
+
+xCR <- freq(comp$Comp_reproduce)["Yes", "Freq"]
+ciCR <- binom.confint(xCR, n_done, method = "wilson")
+ciCR <- sprintf("%.0f%% (95%% CI: %.0f%%, %.0f%%)", 
+                100 * ciCR$mean, 
+                100 * ciCR$lower, 
+                100 * ciCR$upper)
+
+xDD <- freq(comp$Data_Dictionary)["Yes", "Freq"]
+ciDD <- binom.confint(xDD, crosstabDA, method = "wilson")
+ciDD <- sprintf("%.0f%% (95%% CI: %.0f%%, %.0f%%)", 
+                100 * ciDD$mean, 
+                100 * ciDD$lower, 
+                100 * ciDD$upper)
+ 
+```
+
+```{r, results='hide'}
+
+
+priors <- c(
+  # category-specific intercepts (logit scale), relative to the reference category
+  prior(normal(0, 2.5), class = "Intercept", dpar = "muNotReproduced"),
+  prior(normal(0, 2.5), class = "Intercept", dpar = "muIncorrectRounding"),
+
+  # paper-level SDs for each category-specific linear predictor
+  prior(exponential(1), class = "sd", group = "paper_ID",
+        dpar = "muNotReproduced", coef = "Intercept"),
+  prior(exponential(1), class = "sd", group = "paper_ID",
+        dpar = "muIncorrectRounding", coef = "Intercept")
+)
+
+
+model_data_B<-model_data %>% dplyr::select(term, Model, result_O_est_category, paper_ID) %>% na.omit() %>% 
+  mutate(Model=as.factor(Model)) %>% 
+  dplyr::mutate( result_O_est_category = factor(result_O_est_category, levels = c("Reproduced", "Not Reproduced","Incorrect Rounding")))
+
+
+
+
+model_B_brms <- brm(
+  result_O_est_category ~ (1 | paper_ID),
+  data = model_data_B,
+  family = categorical(),
+  seed = 273563,
+    prior = priors
+)
+
+
+post <- posterior_epred(model_B_brms, re_formula = NULL)
+
+
+# Average across observations within each posterior draw
+post_avg <- apply(post, c(1, 3), mean)  # draws × categories
+
+
+summary_table1 <- as_tibble(post_avg) |>
+  pivot_longer(
+    cols = everything(),
+    names_to = "Category",
+    values_to = "p"
+  ) |>
+  group_by(Category) |>
+  summarise(
+    mean  = Sround(mean(p), 2),
+    lower = Sround(quantile(p, 0.025), 2),
+    upper = Sround(quantile(p, 0.975), 2),
+    .groups = "drop"
+  ) |>
+  mutate(
+    Var   = paste0(mean, " (", lower, ", ", upper, ")"),
+    Terms = "B"
+  ) |>
+  select(Terms, Category, Var) |>
+  pivot_wider(names_from = Category, values_from = Var)
+
+
+
+model_B_results <- broom.mixed::tidy(
+  model_B_brms ,
+  effects  = c("fixed", "ran_pars"),
+  conf.int = TRUE
+) |>
+  select(effect, group, term, estimate, std.error, conf.low, conf.high) |>
+  mutate(
+    group = ifelse(is.na(group), "", group),
+    across(c(estimate, std.error, conf.low, conf.high), ~ round(.x, 3))
+  )
+
+draws <- as_draws_df(model_B_brms)
+
+
+pars_to_plot <- c(
+  "b_muNotReproduced_Intercept",
+  "b_muIncorrectRounding_Intercept",
+  "sd_paper_ID__muNotReproduced_Intercept",
+  "sd_paper_ID__muIncorrectRounding_Intercept"
+)
+
+diag_plot <- mcmc_combo(
+  draws,
+  pars = pars_to_plot,
+  combo = c("trace", "dens")
+)
+
+ggsave(
+  filename = "bayes_model_B_multinomial_diag_plot.png",
+  plot = diag_plot,
+  width = 10,
+  height = 8,
+  dpi = 300
+)
+
+
+
+#########################
+
+model_data_LCI<-model_data %>% dplyr::select(term, Model, result_O_lower_category, paper_ID) %>% na.omit() %>% 
+   mutate(Model=as.factor(Model)) %>% 
+  dplyr::mutate( result_O_lower_category = factor(result_O_lower_category, levels = c("Reproduced", "Not Reproduced","Incorrect Rounding")))
+
+
+model_LCI_brms <- brm(
+  result_O_lower_category ~ (1 | paper_ID),
+  data = model_data_LCI,
+  family = categorical(),
+  seed = 363987,
+  prior = priors,
+  chains = 4,
+  iter = 4000,
+  warmup = 2000,
+  cores = 4,
+  control = list(adapt_delta = 0.99, max_treedepth = 15)
+)
+
+preds <- fitted(model_LCI_brms, summary = TRUE)
+
+# Get probabilities
+predictions <- fitted(model_LCI_brms, summary = TRUE)
+
+post <- posterior_epred(model_LCI_brms,  re_formula = NULL)
+
+post_avg <- apply(post, c(1, 3), mean)  # [iterations x categories]
+
+
+# Turn into a tidy table
+summary_table2 <- as_tibble(post_avg) |>
+  pivot_longer(
+    cols = everything(),
+    names_to = "Category",
+    values_to = "p"
+  ) |>
+  group_by(Category) |>
+  summarise(
+    mean  = Sround(mean(p), 2),
+    lower = Sround(quantile(p, 0.025), 2),
+    upper = Sround(quantile(p, 0.975), 2),
+    .groups = "drop"
+  ) |>
+  mutate(
+    Var   = paste0(mean, " (", lower, ", ", upper, ")"),
+    Terms = "Lower CI"
+  ) |>
+  select(Terms, Category, Var) |>
+  pivot_wider(names_from = Category, values_from = Var)
+
+
+model_LCI_results <- broom.mixed::tidy(
+  model_LCI_brms,
+  effects  = c("fixed", "ran_pars"),
+  conf.int = TRUE
+) |>
+  select(effect, group, term, estimate, std.error, conf.low, conf.high) |>
+  mutate(
+    group = ifelse(is.na(group), "", group),
+    across(c(estimate, std.error, conf.low, conf.high), ~ round(.x, 3))
+  )
+
+draws <- as_draws_df(model_LCI_brms)
+
+
+pars_to_plot <- c(
+  "b_muNotReproduced_Intercept",
+  "b_muIncorrectRounding_Intercept",
+  "sd_paper_ID__muNotReproduced_Intercept",
+  "sd_paper_ID__muIncorrectRounding_Intercept"
+)
+
+diag_plot <- mcmc_combo(
+  draws,
+  pars = pars_to_plot,
+  combo = c("trace", "dens")
+)
+
+ggsave(
+  filename = "bayes_model_LCI_multinomial_diag_plot.png",
+  plot = diag_plot,
+  width = 10,
+  height = 8,
+  dpi = 300
+)
+
+
+diag_table <- summarise_draws(model_LCI_brms) |>
+  as_tibble() |>
+  select(variable, rhat, ess_bulk, ess_tail)
+
+diag_summary <- diag_table |>
+  summarise(
+    max_rhat  = max(rhat),
+    min_bulk  = min(ess_bulk),
+    min_tail  = min(ess_tail)
+  )
+
+#########################
+
+
+model_data_UCI<-model_data %>% dplyr::select(term, Model, result_O_upper_category, paper_ID) %>% na.omit() %>% 
+mutate(Model=as.factor(Model)) %>% 
+  dplyr::mutate( result_O_upper_category = factor(result_O_upper_category, levels = c("Reproduced", "Not Reproduced","Incorrect Rounding")))
+
+
+model_UCI_brms <- brm(
+  result_O_upper_category ~  (1 | paper_ID),
+  data = model_data_UCI,
+  family = categorical(),
+  seed = 38373645,
+   prior = priors
+)
+
+preds <- fitted(model_UCI_brms , summary = TRUE)
+
+# Get probabilities
+predictions <- fitted(model_UCI_brms , summary = TRUE)
+
+post <- posterior_epred(model_UCI_brms ,  re_formula = NULL)
+
+post_avg <- apply(post, c(1, 3), mean)  # [iterations x categories]
+
+
+# Turn into a tidy table
+summary_table3 <- as_tibble(post_avg) |>
+  pivot_longer(
+    cols = everything(),
+    names_to = "Category",
+    values_to = "p"
+  ) |>
+  group_by(Category) |>
+  summarise(
+    mean  = Sround(mean(p), 2),
+    lower = Sround(quantile(p, 0.025), 2),
+    upper = Sround(quantile(p, 0.975), 2),
+    .groups = "drop"
+  ) |>
+  mutate(
+    Var   = paste0(mean, " (", lower, ", ", upper, ")"),
+    Terms = "Upper CI"
+  ) |>
+  select(Terms, Category, Var) |>
+  pivot_wider(names_from = Category, values_from = Var)
+
+
+model_UCI_results <- broom.mixed::tidy(
+  model_UCI_brms,
+  effects  = c("fixed", "ran_pars"),
+  conf.int = TRUE
+) |>
+  select(effect, group, term, estimate, std.error, conf.low, conf.high) |>
+  mutate(
+    group = ifelse(is.na(group), "", group),
+    across(c(estimate, std.error, conf.low, conf.high), ~ round(.x, 3))
+  )
+
+draws <- as_draws_df(model_UCI_brms)
+
+
+pars_to_plot <- c(
+  "b_muNotReproduced_Intercept",
+  "b_muIncorrectRounding_Intercept",
+  "sd_paper_ID__muNotReproduced_Intercept",
+  "sd_paper_ID__muIncorrectRounding_Intercept"
+)
+
+diag_plot <- mcmc_combo(
+  draws,
+  pars = pars_to_plot,
+  combo = c("trace", "dens")
+)
+
+ggsave(
+  filename = "bayes_model_UCI_multinomial_diag_plot.png",
+  plot = diag_plot,
+  width = 10,
+  height = 8,
+  dpi = 300
+)
+
+
+#########################
+
+model_data_p<-model_data %>% dplyr::select(term, Model, result_O_p.value_category, paper_ID) %>% na.omit() %>% 
+ mutate(Model=as.factor(Model)) %>% 
+  dplyr::mutate( result_O_p.value_category = factor(result_O_p.value_category, levels = c("Reproduced", "Not Reproduced","Incorrect Rounding")))
+
+
+model_p_brms <- brm(
+  result_O_p.value_category ~  (1 | paper_ID),
+  data = model_data_p,
+  family = categorical(),
+  seed = 92726,
+   prior = priors)
+
+preds <- fitted(model_p_brms, summary = TRUE)
+
+# Get probabilities
+predictions <- fitted(model_p_brms , summary = TRUE)
+
+post <- posterior_epred(model_p_brms ,  re_formula = NULL)
+
+post_avg <- apply(post, c(1, 3), mean)  # [iterations x categories]
+
+
+# Turn into a tidy table
+summary_table4 <- as_tibble(post_avg) |>
+  pivot_longer(
+    cols = everything(),
+    names_to = "Category",
+    values_to = "p"
+  ) |>
+  group_by(Category) |>
+  summarise(
+    mean  = Sround(mean(p), 2),
+    lower = Sround(quantile(p, 0.025), 2),
+    upper = Sround(quantile(p, 0.975), 2),
+    .groups = "drop"
+  ) |>
+  mutate(
+    Var   = paste0(mean, " (", lower, ", ", upper, ")"),
+    Terms = "p-value"
+  ) |>
+  select(Terms, Category, Var) |>
+  pivot_wider(names_from = Category, values_from = Var)
+
+
+model_p_results <- broom.mixed::tidy(
+  model_p_brms,
+  effects  = c("fixed", "ran_pars"),
+  conf.int = TRUE
+) |>
+  select(effect, group, term, estimate, std.error, conf.low, conf.high) |>
+  mutate(
+    group = ifelse(is.na(group), "", group),
+    across(c(estimate, std.error, conf.low, conf.high), ~ round(.x, 3))
+  )
+
+draws <- as_draws_df(model_p_brms)
+
+
+pars_to_plot <- c(
+  "b_muNotReproduced_Intercept",
+  "b_muIncorrectRounding_Intercept",
+  "sd_paper_ID__muNotReproduced_Intercept",
+  "sd_paper_ID__muIncorrectRounding_Intercept"
+)
+
+diag_plot <- mcmc_combo(
+  draws,
+  pars = pars_to_plot,
+  combo = c("trace", "dens")
+)
+
+ggsave(
+  filename = "bayes_model_p_multinomial_diag_plot.png",
+  plot = diag_plot,
+  width = 10,
+  height = 8,
+  dpi = 300
+)
+ 
+
+summary_table1<-summary_table1 %>% dplyr::select(Terms, Reproduced, "Incorrect Rounding", "Not Reproduced")
+summary_table2<-summary_table2 %>% dplyr::select(Terms, Reproduced, "Incorrect Rounding", "Not Reproduced")
+summary_table3<-summary_table3 %>% dplyr::select(Terms, Reproduced, "Incorrect Rounding", "Not Reproduced")
+summary_table4<-summary_table4 %>% dplyr::select(Terms, Reproduced, "Incorrect Rounding", "Not Reproduced")
+
+summary_table<-rbind(summary_table1, summary_table2, summary_table3,summary_table4)
+
+
+countstatistics <- left_join(countstatistics, summary_table, by = "Terms")
+
+# to get range of incorrect rounding
+IncorrectRoundingRange<-countstatistics %>%
+  mutate(
+    first_num = str_extract(`Incorrect Rounding`, "^[0-9\\.]+"),      # extract first number
+    first_num = as.numeric(first_num) * 100                        # convert to numeric and multiply by 100
+  ) %>%
+  summarise(
+    min_val = min(first_num, na.rm = TRUE),
+    max_val = max(first_num, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    summary_range = paste0(round(min_val), "% to ", round(max_val), "%")
+  )
+
+# to get range of incorrect rounding
+reproducedRoundingRange<-countstatistics %>%
+  mutate(
+    first_num = str_extract(Reproduced, "^[0-9\\.]+"),      # extract first number
+    first_num = as.numeric(first_num) * 100                        # convert to numeric and multiply by 100
+  ) %>%
+  summarise(
+    min_val = min(first_num, na.rm = TRUE),
+    max_val = max(first_num, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    summary_range = paste0(round(min_val), "% to ", round(max_val), "%")
+  )
+
+
+```
+
+```{r, results='hide'}
+modelrep_brms <- brm(
+  Reproducibility_status ~ (1 | paper_ID),
+  data = Rep_long,
+  family = categorical(),
+  prior = c(
+    # fixed intercepts (log-odds vs reference category)
+    prior(normal(0, 2.5), class = "Intercept", dpar = "muMostlyreproduced"),
+    prior(normal(0, 2.5), class = "Intercept", dpar = "muPartiallyreproduced"),
+    prior(normal(0, 2.5), class = "Intercept", dpar = "muNotreproduced"),
+
+    # random intercept SDs by paper_ID for each category
+    prior(exponential(1), class = "sd", group = "paper_ID", dpar = "muMostlyreproduced"),
+    prior(exponential(1), class = "sd", group = "paper_ID", dpar = "muPartiallyreproduced"),
+    prior(exponential(1), class = "sd", group = "paper_ID", dpar = "muNotreproduced")
+  ),
+  seed = 72625242
+)
+
+# Get posterior predicted probabilities
+post1 <- posterior_epred(modelrep_brms,   re_formula = NULL)
+
+# Calculate summary statistics across posterior draws
+mean_probs <- apply(post1, c(2, 3), mean)
+lower_probs <- apply(post1, c(2, 3), quantile, probs = 0.025)
+upper_probs <- apply(post1, c(2, 3), quantile, probs = 0.975)
+
+
+prob_df <- as.data.frame(mean_probs)
+colnames(prob_df) <- paste0("Category_", seq_len(ncol(prob_df)))
+
+prob_df <- prob_df %>%
+  mutate(Observation = row_number()) %>%
+  pivot_longer(cols = starts_with("Category_"), names_to = "Category", values_to = "Mean")
+
+lower_df <- as.data.frame(lower_probs)
+upper_df <- as.data.frame(upper_probs)
+
+prob_df$Lower <- as.vector(t(lower_df))
+prob_df$Upper <- as.vector(t(upper_df))
+
+# Get actual category labels
+cat_levels <- levels(Rep_long$Reproducibility_status)
+
+# Summarise across all observations for each category
+modelProb <- prob_df %>%
+  group_by(Category) %>%
+  summarise(
+    Mean = mean(Mean),
+    Lower = mean(Lower),
+    Upper = mean(Upper),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    Category_num = as.integer(gsub("Category_", "", Category)),
+    Category_label = cat_levels[Category_num],
+    Estimate = sprintf("(pp = %.2f, 95%% CI: %.2f, %.2f)", Mean, Lower, Upper)
+  ) %>%
+  dplyr::select(Category = Category_label, Mean, Lower, Upper, Estimate) %>%  dplyr::select(Category, Estimate)
+
+modelProbfreq<-as.data.frame(freq(Rep_long$Reproducibility_status)) %>%  mutate(percent=Sround(`% Valid`, 0 )) %>% mutate(N=paste0(Freq,"(", percent, "%)" )) %>% mutate(Category=rownames(.)) %>% 
+  slice(1:4) %>%  dplyr::select(Category, Freq)
+modelProb<-merge(modelProbfreq, modelProb, by="Category") %>%  arrange(factor(Category, levels = c("Reproduced", "Mostly reproduced", "Partially reproduced", "Not reproduced"))) %>% rename(n=Freq)
+
+
+modelrep_brms_results <- broom.mixed::tidy(
+  modelrep_brms,
+  effects  = c("fixed", "ran_pars"),
+  conf.int = TRUE
+) |>
+  select(effect, group, term, estimate, std.error, conf.low, conf.high) |>
+  mutate(
+    group = ifelse(is.na(group), "", group),
+    across(c(estimate, std.error, conf.low, conf.high), ~ round(.x, 3))
+  )
+
+
+draws <- as_draws_df(modelrep_brms)
+
+
+pars_to_plot <- c(
+  "b_muMostlyreproduced_Intercept",
+  "b_muPartiallyreproduced_Intercept",
+  "b_muNotreproduced_Intercept",
+  "sd_paper_ID__muMostlyreproduced_Intercept",
+  "sd_paper_ID__muPartiallyreproduced_Intercept",
+  "sd_paper_ID__muNotreproduced_Intercept"
+)
+
+diag_plot <- mcmc_combo(
+  draws,
+  pars = pars_to_plot,
+  combo = c("trace", "dens")
+)
+
+ggsave(
+  filename = "bayes_model_model_multinomial_diag_plot.png",
+  plot = diag_plot,
+  width = 10,
+  height = 8,
+  dpi = 300
+)
+
+
+
+
+```
+
+```{r}
+
+library(officer)
+library(flextable)
+
+# -----------------------------
+# Helper: Make table fit Word page
+# -----------------------------
+ft_fit_word <- function(df, digits = 3, font_size = 9, max_width = 6.5) {
+
+  ft <- flextable(df)
+
+  # Format numeric columns only
+  num_cols <- names(df)[vapply(df, is.numeric, logical(1))]
+  if (length(num_cols) > 0) {
+    ft <- ft |> colformat_double(j = num_cols, digits = digits)
+  }
+
+  ft <- ft |>
+    fontsize(size = font_size, part = "all") |>
+    autofit() |>
+    fit_to_width(max_width = max_width)
+
+  ft
+}
+
+# -----------------------------
+# Helper: Add one model section
+# -----------------------------
+add_model_section <- function(doc, title, results_df, plot_path) {
+
+  # Start each model on a new page
+  doc <- doc |> body_add_break()
+
+  doc <- doc |>
+    body_add_par(title, style = "heading 1")
+
+  # ---- Table FIRST ----
+  ft <- ft_fit_word(results_df, digits = 3, font_size = 9)
+
+  # Add footnote to table
+  ft <- ft |>
+    add_footer_lines(
+      values = as_paragraph(
+        as_i("Note. "),
+        "Estimates are presented on the multinomial logit scale relative to the reference outcome category (Reproduced). SD denotes the standard deviation of the paper-level random intercept."
+      )
+    ) |>
+    fontsize(size = 8, part = "footer")
+
+  doc <- doc |>
+    body_add_par("Parameter estimates", style = "heading 2") |>
+    body_add_flextable(ft)
+
+  # ---- Plot SECOND ----
+  doc <- doc |>
+    body_add_par("MCMC diagnostic plot", style = "heading 2")
+
+  if (file.exists(plot_path)) {
+    doc <- doc |>
+      body_add_img(src = plot_path, width = 6, height = 5)
+  } else {
+    doc <- doc |>
+      body_add_par(paste0("Plot not found: ", plot_path), style = "Normal")
+  }
+
+  doc
+}
+
+# -----------------------------
+# Define your five models
+# -----------------------------
+models_to_report <- list(
+  list(
+    title = "Model B: Estimate category",
+    results = model_B_results,
+    plot = "bayes_model_B_multinomial_diag_plot.png"
+  ),
+  list(
+    title = "Model: Lower CI category",
+    results = model_LCI_results,
+    plot = "bayes_model_LCI_multinomial_diag_plot.png"
+  ),
+  list(
+    title = "Model: Upper CI category",
+    results = model_UCI_results,
+    plot = "bayes_model_UCI_multinomial_diag_plot.png"
+  ),
+  list(
+    title = "Model: p-value category",
+    results = model_p_results,
+    plot = "bayes_model_p_multinomial_diag_plot.png"
+  ),
+  list(
+    title = "Model Computational Reproducibility",
+    results = modelrep_brms_results,
+    plot = "bayes_model_model_multinomial_diag_plot.png"
+  )
+)
+
+# -----------------------------
+# Build Word document
+# -----------------------------
+doc <- read_docx()
+
+# Top unnumbered title
+doc <- doc |>
+  body_add_fpar(
+    fpar(
+      ftext(
+        "Bayesian multinomial mixed models (tables and diagnostics)",
+        prop = fp_text(bold = TRUE, font.size = 16)
+      ),
+      fp_p = fp_par(text.align = "center")
+    )
+  ) |>
+  body_add_par(
+    paste(
+      "Models were fitted with weakly informative priors to support estimation",
+      "with a small number of paper-level clusters.",
+      "Convergence diagnostics (R-hat, effective sample sizes, divergent transitions,",
+      "trace plots) were assessed and were adequate."
+    ),
+    style = "Normal"
+  )
+
+# Add each model section
+for (m in models_to_report) {
+  doc <- add_model_section(doc, m$title, m$results, m$plot)
+}
+
+# -----------------------------
+# Save document
+# -----------------------------
+print(
+  doc,
+  target = "tables/Computational_reproducibility_Bayesian_Multinomial_Models_Tables_Plots.docx"
+)
+
+
+```
+
+```{r datd, results='hide'}
+my.Table1chap5<-comp %>% dplyr::select(Package,  Format_file, Data_Dictionary) %>% tbl_summary() %>% add_n() %>% as_tibble()
+names(my.Table1chap5)<-c("Characteristic", "N", "NP") 
+
+
+pack <- comp %>%
+  dplyr::count(Package, name = "n") %>%
+  dplyr::mutate(
+    pct = 100 * n / sum(n),
+    `n (%)` = sprintf("%d (%.0f)", n, pct)
+  ) %>%
+  dplyr::arrange(desc(n)) %>%
+  dplyr::select(
+    `Statistical package, N = 95` = Package,
+    `n (%)`
+  )
+
+format <- comp %>%
+  filter(Data_Available == "Yes") %>%
+  dplyr::count(Format_file, name = "n") %>%
+  dplyr::mutate(
+    pct = 100 * n / sum(n),
+    `n (%)` = sprintf("%d (%.0f)", n, pct)
+  ) %>%
+  dplyr::arrange(desc(n)) %>%
+  dplyr::select(
+    .,
+    !!paste0("Data Format, N = ", crosstabDA) := Format_file,
+    `n (%)`
+  )
+
+
+# Dynamically pad `format` to match `pack` row count
+format <- format %>%
+  mutate(across(everything(), as.character)) %>%
+  add_row(!!!setNames(rep(list(NA), ncol(format)), names(format)), .rows = nrow(pack) - nrow(format)) 
+
+
+table5<-bind_cols(pack, format)
+table5<-table5[1:(nrow(pack)), ]
+
+names(table5) <- c( "Statistical package, N = 95",  "n1", paste("Data Format, N =", crosstabDA),  "n2")
+
+
+## creating the latex syntax
+sbold <- function(x){paste0('{\\bf ', x, '}')}
+Table5<-print(xtable(table5, caption="Description of statistical packages and data format", align = c("l", "l",  "l", "l",  "l")),  booktabs = getOption("xtable.booktabs", TRUE), caption.placement="top", include.rownames=FALSE, type="latex", sanitize.colnames.function=sbold, floating=T)
+
+
+
+
+Table5<-sub('ht', "H", Table5)
+Table5<-sub('centering', "raggedright", Table5)
+Table5<-sub('n1', "n \\\\%", Table5)
+Table5<-sub('n2', "n \\\\%", Table5)
+
+
+dir_name <- "tables"
+file_path1 <- file.path(dir_name, "Table5.tex")
+write(Table5, file = file_path1, sep = "\t")
+
+
+
+  
+```
+
+```{r cnt, results='hide'}
+countstatistics<-countstatistics %>% rename(IRnd ="Incorrect Rounding", "Not Rep"="Not Reproduced",
+                                           "Inc Rnd"  ="Incorrect_Rounding", NRep ="Not_Reproduced") %>% mutate(N=Sround(N,0))
+  
+
+## creating the latex syntax
+sbold <- function(x){paste0('{\\bf ', x, '}')}
+Table2chap5<-print(xtable(countstatistics,  caption="Observed frequencies and adjusted predictive probabilities of reproducibility classification by statistic.", align = c("l", "l",  "l", "l", "l", "l", "l", "l", "l", "l")),  booktabs = getOption("xtable.booktabs", TRUE), caption.placement="top", include.rownames=FALSE, type="latex", latex.environments = "widestuff", sanitize.colnames.function=sbold, floating=T, table.placement = "H", comment= FALSE, size = "\\small")
+
+
+Table2chap5 <- gsub("\\[H\\]", "", Table2chap5)
+Table2chap5<-sub('R2Adj', "\\\\ $R^2$Adj", Table2chap5)
+Table2chap5<-sub('R2', "\\\\ $R^2$", Table2chap5)
+
+
+Table2chap5 <- gsub("IRnd", "Inc Rnd", Table2chap5, fixed = TRUE)
+Table2chap5 <- gsub("reproduced", "Rep", Table2chap5, fixed = TRUE)
+Table2chap5 <- gsub("Reproduced", "Rep", Table2chap5, fixed = TRUE)
+Table2chap5 <- gsub("NRep", "Not Rep", Table2chap5, fixed = TRUE)
+
+
+
+
+Table2chap5 <- sub(
+  "\\end{tabular}", 
+  "\\end{tabular}\\begin{flushleft} Terms = model statistics; Papers = Number of papers reporting each term; N = total number of times terms were reported across the selected models (up to three per paper); The reproducibility status of statistics, categorised as Reproduced (Rep), Incorrect Rounding (Inc Rnd), or Not Reproduced (Not Rep), summarised using observed frequencies and percentages. Predicted probabilities with 95\\% credible intervals were estimated using a Bayesian multinomial mixed-effects model with a random intercept for paper. Models were estimated for the four terms with sufficient data. Predicted probabilities were not calculated for terms with N < 30.\\end{flushleft}", Table2chap5,   fixed = TRUE)
+
+Table2chap5 <- sub(
+  "\\\\toprule",
+  paste0(
+    "\\\\toprule ",
+    "\\\\multicolumn{2}{l}{} ",
+    "& \\\\multicolumn{3}{l}{\\\\textbf{Frequencies and percentages}} ",
+    "& \\\\multicolumn{1}{l}{} ",
+    "& \\\\multicolumn{3}{l}{\\\\textbf{Predicted probability and credible intervals}} \\\\\\\\",
+    "\n\\\\cline{3-9}"
+  ),
+  Table2chap5
+)
+
+
+
+
+# write to tables folder
+dir_name <- "tables"
+file_path2 <- file.path(dir_name, "Table2chap5.tex")
+write(Table2chap5, file = file_path2, sep = "\t")
+print(Table2chap5)
+
+```
+
+```{r , results='hide'}
+
+
+MI <- data.frame(matrix(nrow = 9, ncol =6 ))
+names(MI)<- c("No", "Location", "Test", "Outcome", "Model specification","Details")
+MI$No  <-c(1:9)
+MI$Location <-c(rep("Table 1, Page 2", 4),rep("In text, Page 3, Para 1", 2), rep("In text, Page 3, Para 2", 2), "In text, Page 4, Para 3")
+MI$Test<-c(rep("Linear Regression", 8), "Correlation")
+MI$Outcome<-c( rep("Systolic Blood Pressure", 4), rep("Low-density lipoprotein", 4), "")
+MI$`Model specification`<-c("SBP = Age", "SBP = Sex", "SBP = BMI_category", "SBP = Age + Sex + BMI_category", "LDL = Age","LDL = Sex", "LDL = BMI_category", "LDL = Age + Sex + BMI_category", "SBP = LDL")
+MI$Details[4]<-"Type III SS"
+MI$Details[8]<-"Type III SS"
+
+## creating the latex syntax
+sbold <- function(x){paste0('{\\bf ', x, '}')}
+Table5chap6<-print(xtable(MI,  caption="Hypothetical example of a model location and specification table.", align = c("l", "l",  "l", "l", "l", "l",  "l")),  booktabs = getOption("xtable.booktabs", TRUE), caption.placement="top", include.rownames=FALSE, type="latex", latex.environments = "widestuff", sanitize.colnames.function=sbold, floating=T, table.placement = "H", comment= FALSE, size = "\\small")
+
+#Table5chap6 <- gsub("\\[H\\]", "", Table5chap6)
+#Table5chap6<-sub('centering', "raggedright", Table5chap6)
+
+
+
+Table5chap6 <- sub(
+  "\\end{tabular}", 
+  "\\end{tabular}\\begin{flushleft} No = Model Number; Test = Statistical test; Outcome = Y variable (in paper); Model specification = Variable names and model used for results (from data dictionary).  \\end{flushleft}", 
+  Table5chap6,   fixed = TRUE)
+
+
+
+
+# write to tables folder
+file_path5 <- file.path(dir_name, "Table5chap6.tex")
+write(Table5chap6, file = file_path5, sep = "\t")
+
+```
+
+```{r}
+ swimmerdatB<-model_data %>% dplyr::select( Model, term, result_O_est_category, paper_ID) %>% rename(Status= result_O_est_category, Paper=paper_ID ) %>% na.omit()  %>%   mutate(Paper = as.factor(Paper)) %>%  mutate(Model = case_when(
+    Model == 1 ~ "Model 1",
+    Model == 2 ~ "Model 2",
+    Model == 3 ~ "Model 3",
+    TRUE ~ as.character(Model)
+  )) %>% group_by(Paper) %>% mutate(Estimate = 1:n()) %>% ungroup() %>%
+   mutate(Status = factor(Status, levels = c("Reproduced", "Incorrect Rounding", "Not Reproduced")))
+
+# Swimmer Plot Code
+swimmerB<-ggplot( swimmerdatB, aes(x = Estimate, y = Paper)) +
+  scale_y_discrete(limits = rev)+
+  # Add tiles for models
+  geom_tile(aes(fill = Model), height = 0.9) +
+  # Add shapes for statuses
+  geom_point(
+    aes(shape = Status, color = Status),
+    size =5,
+    fill = NA, # Ensures hollow symbols for shapes like 24
+    show.legend = TRUE
+  ) +
+  # Custom colors for models
+  scale_fill_manual(
+    values = c("Model 1" = "#A6CEE3", "Model 2" = "#B2DF8A", "Model 3" = "#FDBF6F"),
+    name = "Model"
+  ) +
+  # Add colors for statuses
+  scale_color_manual(
+    values = c("Reproduced" = "black", "Incorrect Rounding" = "black", "Not Reproduced" = "black"),
+    name = "Status"
+  ) +
+  # Add shapes: tick for Reproduced, hollow triangle for Incorrect Rounding, cross for Not Reproduced
+  scale_shape_manual(
+    values = c("Reproduced" = 16, "Incorrect Rounding" = 1, "Not Reproduced" = 4),
+    name = "Status"
+  ) +
+  labs(
+    title = "",
+    x = "Regression Coefficient Number",
+    y = " Paper",
+    fill = "Model",
+    color = "Status",
+    shape = "Status"
+  ) +
+  theme_bw() +
+  theme(
+    panel.grid.major.y = element_blank(),
+    axis.text.y = element_text(size = 16),
+    axis.text.x = element_text(size = 16),
+    axis.title = element_text(size = 16),
+    plot.title = element_text(size = 16, face = "bold"),
+    legend.title = element_text(size = 12), 
+    legend.text = element_text(size = 12)
+  ) +
+   guides(
+  fill = guide_legend(override.aes = list(shape = NA)),
+  color = guide_legend(override.aes = list(fill = NA)),
+  shape = guide_legend(override.aes = list(fill = NA))
+)
+
+swimmerB <- swimmerB +
+  annotate(
+    "label",
+    x = 12.5,   # position of text box (adjust)
+    y = "22",  # paper to point at
+    label = "For paper 22,\n each model had \n one coefficient that \n was not reproduced",
+    hjust = 0,
+    size = 4.5,
+    label.size = 0.3,
+    fill = "white"
+  )
+
+
+swimmerB <- swimmerB +
+  annotate(
+    "segment",
+    x = 12.3, xend = 4.2,   # arrow start → target
+    y = "22", yend = "22",
+    arrow = arrow(length = unit(0.25, "cm")),
+    linewidth = 0.6
+  )
+
+
+
+ggsave(
+  filename = "figures/swimmer_plot_B.eps",
+  plot = swimmerB,
+  device = cairo_ps,
+  dpi = 300
+)
+
+```
+
+## Introduction
+
+Concerns about the reproducibility of research findings have attracted considerable attention across multiple scientific disciplines, including psychology, economics, and the health and biomedical sciences, where published results are often difficult to reproduce independently [@camerer2016evaluating; @opensciencecollaboration2015estimating; @national2019reproducibility]. Empirical assessments of computational reproducibility in health related research have shown that even when original datasets are available, reproducing published statistical results can be challenging, with discrepancies often arising from reporting errors and insufficient documentation of data management and statistical analyses [@harris2019examining; @ioannidis2009repeatability].
+
+A widely cited survey of over 1,500 researchers reported that 52% perceived a “reproducibility crisis” in science, 70% had been unable to reproduce another researcher’s findings, and 50% had failed to reproduce at least one of their own studies [@baker2016there]. Although the survey was based on self-reported experiences from a voluntary sample and did not directly measure reproducibility rates, it played an important role in catalysing broader discussion about research reproducibility. These concerns have contributed to ongoing calls for improvements in study design, statistical practice, and reporting standards [@national2019reproducibility].
+
+The reproducibility of results strengthens scientific findings by enabling verification and building trust in research. Allowing others to independently confirm that results are not due to coding or data processing errors is key to identifying analytical errors and supporting the accurate interpretation of findings. Reproducibility differs from replication; the latter involves collecting and analysing new data using the original protocol.
+Computational reproducibility refers to the ability to reproduce the reported results using the original code, the described statistical tests, the data, and the software environments [@ziemann2023five]. Achieving this requires well-documented methods, workflows, and a clearly described or accessible software setup, including version-controlled software and dependencies [@sep-scientific-reproducibility; @ziemann2023five].
+
+The statistical complexity of medical research has increased substantially over the past two decades, with methods such as multivariable linear regression now widely used [@strasak2007use]. Despite this growing use, statistical errors remain common, often arising from a limited understanding of statistical methods among researchers [@altman1998statistical]. Reviews have reported statistical errors or methodological misuse in up to half of assessed articles [@gore1977misuse; @wullschleger2014high], and p-value inconsistencies that may alter statistical conclusions have been identified in approximately one in eight papers [@nuijten2016prevalence]. With over 1.5 million papers indexed annually in PubMed [@nlm2023stats], and a large proportion reporting statistical analyses [@ioannidis2019have], the scale of the literature and its reliance on statistical methods mean that even minor errors can have wide-reaching implications for the reliability of medical research. Addressing reproducibility is crucial for improving healthcare and ensuring that discoveries are trustworthy and impactful.
+
+While many studies have assessed compliance with data-sharing policies [@serghiou2021assessment], few have examined whether shared data are complete, accurate, and sufficiently documented to enable reproducibility. This research moves beyond assessing data availability to evaluate whether shared datasets are usable for reproducing published statistical analyses. Gaps such as incomplete datasets, errors, or inadequate documentation can undermine the goals of open science, leading to wasted effort and resources when research is built upon potentially incorrect findings. Of greater concern is that flawed analyses may be published and ineffective treatments subsequently implemented in practice.
+This study evaluates the quality and reproducibility of open datasets, identifies common barriers to reuse, and advocates for standardized practices to promote transparency, consistency, and reproducibility in statistical analysis and reporting in health research.
+
+## Materials and Methods
+
+This exploratory, descriptive cross-sectional study does not aim to test specific hypotheses.
+Using a random sample of published articles, the study estimates the prevalence of research papers with open data that are computationally reproducible. This work is part of a broader project on statistical reporting and reproducibility in health research, with full details of the paper sampling methods provided in Jones et al. [@jones2025common].
+
+### Sample size determination
+
+The original sample size of 100 papers was determined to assess the prevalence of reported linear regression assumptions, allowing for a detectable sample proportion of 0.05 (5%) with a two-sided 95% confidence interval and a 5% margin of error [@jones2025common].
+Based on pilot work conducted in 2018, approximately 50% of papers were expected to have associated data.
+This percentage was considered feasible for assessing computational reproducibility.
+
+### Research questions
+
+-   What proportion of papers stating that data were available included the data necessary to reproduce the linear regression analyses?
+-   Among papers that shared data, what proportion included a data dictionary?
+-   What proportion of linear regression analyses in published papers were computationally reproducible?
+
+### Randomisation of papers
+
+One hundred research papers (excluding editorials and other non-research articles) were randomly selected from *PLOS ONE* in 2019, a journal with an established data-sharing policy [@PLOS2019]. This study was conducted in 2020/21, with 2019 chosen to provide a current perspective on reporting practices. An unintended benefit of this time frame was that it covered the last full year before the COVID-19 pandemic, thereby avoiding potential disruptions to research practices caused by pandemic-related shutdowns [@karimi2023covid].
+The "searchplos" function from the "rplos" R package [@Chamberlain2014rplos] was used to identify papers based on two criteria: "health" appearing in the subject area and "linear regression" reported in the materials and methods section. The eligible papers were randomly ordered, and the first 100 that met the criteria were included. Each paper was identified by a unique study number (paper 1 to 100); the corresponding paper DOIs are provided in GitHub [@jones2026Reproducibility]. To maintain a focus on the routine use of standard linear regression among health researchers, studies were excluded if their analyses incorporated clustered or random effects, alternative methodologies (e.g., Bayesian or non-parametric approaches), or used linear regression for secondary purposes like calibration or pre-processing, rather than as part of their main analysis.
+Five papers from the original 100 that met the inclusion criteria were excluded upon closer inspection for failing to report any linear regression results, leaving 95 papers for assessment of reporting [@jones2025common]. 
+
+Computational reproducibility was assessed for the first `r n_done` papers in the random sample with confirmed data, ensuring the representativeness of the overall study sample. However, we acknowledge that the final sample size was small. Reproducing each paper was time-intensive, requiring between one and three days per paper. All reproductions were undertaken by the first author, an accredited senior biostatistician with 20 years’ experience, with input, where needed, from three senior biostatisticians (co-authors), two of whom were also accredited (AStat).
+
+### Ethics and Protocol
+
+The aim of this study was to reproduce the statistical results from publications that made their data publicly available. Authors of papers published in *PLOS ONE* were considered to have implicitly consented through their agreement with the journal’s data sharing policy [@PLOS2019], which supports the validation and reproduction of results from shared data. This study received Negligible-Low Risk Ethics approval from the Queensland University of Technology Human Research Ethics Committee (Approval Number: 2000000458).
+The study protocol is publicly available on GitHub [@lee_jones_2024_10620146].
+
+### Linear regression models within papers
+
+Each linear regression model was identified and assigned a number within each paper. A maximum of three linear regression analyses were selected per paper. The final model (or the primary models of interest) was selected for papers with more than three models, with additional models chosen at random. If no primary models of interest were identified, all three models were selected randomly. Limiting the selection to three models per paper made the workload manageable. We also expected a high correlation in computational reproducibility across models from the same paper, leading to diminishing returns from reproducing every model.
+
+Identification of linear regression models was guided by a prior statistical review of the same papers, which was based solely on reported results [@jones2025common]. Linear regressions were recorded for each paper, and two statisticians independently verified the number of eligible models.
+Poor reporting practices, including unclear methods, incomplete results, and missing test details, made identification challenging [@jones2025linear]. The initial model counts and locations were refined following data review and finalised prior to model selection, with random sampling applied only when no primary model of interest was identified.
+
+### Reproducibility methodology
+
+For reproducibility purposes, a Quarto report was developed for each of the 95 papers to assess data sharing and reproducibility.
+Each report documented the statistical software used, whether the data were reported, where they were stored, whether the reported data allowed reproduction of the linear regression models, and whether the results could be computationally reproduced. Our reporting for papers, including reproducible code, HTML reports for each paper, and the code and data required to reproduce the current study, are all available on GitHub [@jones2026Reproducibility].
+
+When data were available, the identified linear regression models were re-analysed to assess reproducibility [@jones2025common].
+To improve readability and navigation, the report was broken into four sections: *Original Results*, *Reproduced Results*, *Differences*, and *Sensitivity Analysis*. This layout helped structure the findings and allowed users to move efficiently between different aspects of the analysis.
+The papers' results were presented as text and tables and entered into the “*Original Results*” section in a structured format, with results left blank if not reported. The same format was used for the reproduced results to facilitate comparisons, and the differences between the original and reproduced results were graphed and tabulated.
+
+Models were reproduced using the *linReg* function from the JMV package [@selker2024jmv] in R. This package was chosen for two reasons: it provides well-formatted output equivalent to the results of other major packages such as SPSS and STATA, and it was also developed for Jamovi [@selker2024jmv], a point-and-click version of R that reduces the barrier to reproducibility by allowing users to capture code for their analyses.
+Differences in coefficients and sums of squares can partly arise from model parameterisation. Reporting was matched to the original study where possible; when sums of squares were not reported, we calculated Type III sums of squares using effect (grand mean) coding [@fox2019r] to ensure comparability with commonly reported output in major statistical packages [@kutner2005applied].
+
+Percentage change was initially considered to assess discrepancies in computational reproducibility; however, it was ruled out early in the process because parameter values near zero produced disproportionately large percentage differences. Transformations of percentage differences were also rejected for their artificial and unintuitive nature. In linear regression, models are expected to produce identical results when reproduced correctly, with any minor discrepancies typically arising from rounding.
+
+A custom function was developed to assess agreement between original and reproduced values for regression coefficients, standard errors, 95% confidence intervals, t-statistics, p-values, R^2^, adjusted R^2^, model and residual degrees of freedom, and the global F statistic.
+For each value, the function computed two thresholds based on the number of decimal places (d) reported in the original paper: a stricter threshold $0.50 \times 10^{-d}$ and a more lenient threshold ($0.999 \times 10^{-d}$).
+Values were classified as "Reproduced" if the absolute difference fell within the stricter threshold, "Incorrect Rounding" if within the lenient threshold, and "Not Reproduced" if exceeding both. This approach provided a structured framework for evaluating reproducibility while accounting for plausible rounding variability.
+
+An example of using these thresholds to evaluate lower confidence intervals is shown in @tbl-CILower. In this case, results were reported to two decimal places; therefore, the threshold for considering the lower confidence interval as reproduced was an absolute difference of $\leq 0.005$.
+Absolute differences between $>0.005$ and $0.0099$ were classified as rounding discrepancies. Differences of $\ge 0.01$ (in either direction) were flagged as not reproduced. In this example, the lower confidence interval for the intervention group in the original results was reported as 3.77, whereas the reproduced results were -3.77664, indicating the original result lacked a negative sign and was therefore not reproduced.
+
+```{r, ft.align="left"}
+#| label: tbl-CILower
+#| tbl-cap: Example of reproducing lower confidence intervals from a linear regression analysis.
+
+
+
+CL_model_raw_df<-read.csv(file="tables/CL_model_raw_df.csv")  
+  
+
+
+kable(CL_model_raw_df, booktabs = TRUE, longtable = TRUE, linesep = "", format="latex") %>% 
+     kable_styling(latex_options = c("repeat_header", "hold_position"), full_width = FALSE) %>%
+     kableExtra::footnote(general = "O_lower = original lower confidence interval; R_lower = reproduced lower confidence interval; change.lci = change in R_lower - O_lower; Reproduce.lower = lower confidence interval reproduced.",
+           general_title = "",
+           threeparttable = TRUE,
+           footnote_as_chunk = TRUE)
+```
+
+The study protocol [@lee_jones_2024_10620146] guided the development of the reproducibility template. ChatGPT [@chatgpt2025] was used to aid in developing functions and debugging code, while both Grammarly [@grammarly2025] and ChatGPT were used to edit grammar and improve writing flow.
+However, neither tool was used to write sections of the manuscript or perform statistical reviews.
+
+Data were imported directly from the *PLOS ONE* site or associated data repositories using code that extracted the necessary information without storing entire datasets. The relevant regression models were identified and reformatted for each paper into a standardized structure, dynamically renaming predictors, e.g., *age* becomes *x1* in the formula, but is still labelled as *age* in the output. Modular functions were created to reproduce the analyses and assess the difference between the original and reproduced results.
+
+Up to three linear regression models were assessed per paper. At the model level, computational reproducibility was categorised into four levels:
+
+-   **Reproduced**; all aspects of the model were reproduced without errors.
+
+-   **Mostly reproduced**; most aspects of the models were reproduced, with errors that did not change the conclusion.
+
+-   **Partially reproduced**; only some aspects of the model were reproduced, or errors and differences change the conclusion.
+
+-   **Not reproduced**; all or most aspects of the model could not be reproduced.
+
+A paper was considered reproducible if all three models were evaluated as either fully or mostly reproduced; otherwise, it was classified as not reproduced.
+
+### Statistical methods
+
+Three aspects were assessed for each paper: (i) whether the reported data were available, (ii) whether any data dictionary was provided, and (iii) whether the paper was computationally reproducible. Each aspect was coded as a binary variable (“Yes” or “No”). Frequencies and percentages were reported for these categorical variables, along with 95% Wilson confidence intervals [@brown2001interval]. Reproducibility was further examined at both the individual statistic level and the model level. At the individual statistic level, reproducibility was classified as "Reproduced", "Incorrect Rounding", or "Not Reproduced" and visualised using swimmer plots [@chia2016current] and box plots, the latter displaying aggregated counts of reproducibility categories across papers.
+
+While probabilities of reproducibility status could be calculated directly from individual statistics, a modelling approach was required to account for the hierarchical structure of the data, with multiple statistics per model and up to three models per paper. Bayesian mixed-effects multinomial models (fitted using the *brms* package [@burkner2018advanced]) with weakly informative priors to stabilise the variance were used to classify models into reproducibility categories [@gelman2013bayesian]. The models included a random intercept for paper to account for the correlation arising from repeated measures. Predicted probabilities and corresponding 95% credible intervals were estimated for classification at both the individual-statistic and model levels.
+
+The primary author also rated the papers' subjective difficulty to reproduce on a five-point scale: 0 = no models in the paper were at least "Partially reproduced", 1 = very difficult, 2 = difficult, 3 = manageable, and 4 = straightforward. This rating, along with other categorical variables (e.g., statistical package used, data format, typographic errors, reporting clarity), were summarised using frequencies and percentages.
+R version 4.4.2 was used for all analyses [@Rteam].
+
+## Results
+
+The majority of papers (84%, 80/95) had an observational study design, and most (77%, 73/95) involved human participants (@tbl-Paperdescrip).
+All papers were first screened for data availability, the presence of a data dictionary, data format, and the statistical package used.
+Of the papers screened, `r n_havedata` reported that data were available in the paper, supporting information, or in an external data repository (@fig-paperComp). However, the data required to reproduce the linear regression could not be identified for `r crosstabDNA`/ `r n_havedata` of these papers. From the papers with available data (N = `r crosstabDA`), a subsample of `r n_done` was sequentially assessed for computational reproducibility.
+
+Only `r as.data.frame(freq(comp$Data_Dictionary))["Yes", "Freq"]`/`r crosstabDA` papers or `r ciDD` with available data included data dictionaries (@tbl-datadic). The most common format for sharing data was Excel (n =`r  as.data.frame(freq(comp$Format_file))["Excel", "Freq"]`), with a further `r  int_to_words(as.data.frame(freq(comp$Format_file))["CSV", "Freq"])` authors sharing data using CSV files.
+
+```{r , ft.align="left", results='asis'}
+#| label: tbl-Paperdescrip
+#| tbl-cap: Study design and sample type of the 95 included linear regression papers.
+ 
+    kable(df, booktabs = TRUE, longtable = TRUE, linesep = "", format="latex", row.names = FALSE ) %>% 
+    kable_styling(latex_options = "hold_position", full_width = FALSE,  font_size=9) %>%
+     kableExtra::footnote(general =  "Adapted from Jones et al. p17. [17].",
+          general_title = "",
+          threeparttable = TRUE,
+           footnote_as_chunk = TRUE) 
+    
+  
+```
+
+```{r, results='hide'}
+#| label: fig-paperComp
+#| fig-cap: "Flow chart of papers in analysis. N is the number of papers."
+#| fig-pos: "H"
+
+library(DiagrammeR)
+library(DiagrammeRsvg)
+library(rsvg)
+library(glue)
+
+
+# Construct the diagram with glue
+grViz(glue("
+digraph flowchart {{
+  graph [layout = dot, rankdir = TB]
+
+  node [shape = rectangle, style = filled, fillcolor = lightblue, fontcolor = black, width = 2.5, height = 1]
+
+  node1 [label = 'Randomly selected PLOS ONE papers reporting \\n the use of linear regression in the health field, \\n screened for data sharing (N = {n_total})']
+  node2 [label = 'Reported having data in the paper \\n or data repository (N = {n_havedata})']
+  node3 [label = 'Reported that ethics or further steps were required, \\n therefore, data not immediately available (N = {n_havenodata})']
+  node4a [label = 'Data were available (N = {crosstabDA})']
+  node4b [label = 'Reported having data, but data to reproduce linear regressions \\n could not be identified (N = {crosstabDNA})', fillcolor = lightgray]
+  node5 [label = 'The first {n_done} papers with available data from the random \\n sample were assessed for computational reproducibility', fillcolor = lightblue]
+  node6a [label = 'Computationally reproducible  \\n (N = {n_Repo})', fillcolor = lightblue]
+  node6b [label = 'Not computationally reproducible \\n (N = {n_notRepo})', fillcolor = lightgray]
+
+  node1 -> node2
+  node1 -> node3
+  node2 -> node4a
+  node2 -> node4b
+  node4a -> node5
+  node5 -> node6a
+  node5 -> node6b
+
+  edge [arrowhead = vee]
+}}
+"))
+
+
+
+```
+
+By far the most common statistical package was SPSS, followed by R, Stata and SAS, with less commonly used packages including GraphPad/Prism, MATLAB, and Statistica. `r  stringr::str_to_title(as.character(int_to_words(freq(comp$Format_file)["Stata", "Freq"] + as.data.frame(freq(comp$Format_file))["SPSS", "Freq"])))` authors shared data using statistical programs (Stata = `r  freq(comp$Format_file)["Stata", "Freq"]`, SPSS = `r freq(comp$Format_file)["SPSS", "Freq"]`), these tended to have better structure due to having in-built data dictionaries and in the format required for analysis. A further `r  int_to_words(as.data.frame(freq(comp$Format_file))["PDF", "Freq"] + as.data.frame(freq(comp$Format_file))["Image", "Freq"])` papers were in less accessible formats, including PDF, Word or image files and required specialised R packages to extract the data.
+
+### Computational reproducibility results
+
+Of the `r n_done` papers assessed for computational reproducibility, `r freq(comp$Unclear_N)["Yes", "Freq"]` had unclear reporting of the number of observations which complicated the assessment of reproducibility. This was particularly problematic for multivariable models, where it was difficult to determine whether differences were due to uncertainty about which variables were included in the model or to differences in the number of observations. `r stringr::str_to_title(int_to_words(freq(comp$Typo)["Yes", "Freq"]))` papers contained typographical errors such as a missing negative sign, or swapping the order of digits.
+
+```{r, ft.align="left", results='asis'}
+#| label: tbl-datadic
+#| tbl-cap: Frequencies of statistical packages and data formats.
+
+table5<-table5 %>% rename("n (%) " =n1, "n (%)" =n2)
+
+kable(table5, booktabs = TRUE, longtable = TRUE, linesep = "", format="latex") %>% 
+     kable_styling(latex_options = c("repeat_header", "hold_position"), full_width = FALSE, font_size = 9) %>%
+     kableExtra::footnote(general = "",
+           general_title = "",
+           threeparttable = TRUE,
+           footnote_as_chunk = TRUE)
+```
+
+At least one model was unclear in `r int_to_words(freq(comp$Unclear_model)["Yes", "Freq"])` papers, making the results difficult or not possible to reproduce based on the available information. Overall, `r int_to_words(freq(comp$Comp_reproduce)["Yes", "Freq"])` or `r ciCR` of papers were found to be computationally reproducible. Only `r int_to_words(freq(comp$Rating)["4", "Freq"])` were rated as straightforward to reproduce, `r int_to_words(freq(comp$Rating)["2", "Freq"])` were rated as difficult, a further `r int_to_words(freq(comp$Rating)["1", "Freq"])` were very difficult to reproduce and `r int_to_words(freq(comp$Rating)["0", "Freq"])` papers had no models that could be at least partially reproduced.
+
+For each paper, we tried to reproduce three regression models. For each regression, we attempted to reproduce multiple terms, including the coefficients (B), CIs, p-values, and test statistics. Similar patterns were typically observed within the same paper. As if a few coefficients could not be reproduced, the others in that paper also failed to reproduce. Conversely, when most coefficients were successfully reproduced but one or two were not, this indicated isolated reporting or typographical errors rather than systematic analytical differences.
+
+The reproducibility status of each regression coefficient in each model is displayed by paper in the swimmer plot (@fig-swimmerplot).
+For example, in the seventh paper, 20 regression coefficients across three models were classified as "Not Reproduced", with none classified as either "Reproduced" or "Incorrect Rounding".
+
+When considering reproducibility classification at the individual-statistic level using multinomial logistic regression with three categories (incorrect rounding, not reproduced, and reproduced), the outcome showed a similar percentage of incorrect rounding across terms (`r IncorrectRoundingRange$summary_range`) (Table 4).
+A comparable number of statistics were reproduced for regression coefficients, confidence intervals and p-values, ranging from `r reproducedRoundingRange$summary_range`.
+
+At the model level, `r modelProb$n[2]`/`r  sum(modelProb$n)` models were "Mostly Reproduced", with a predicted probability of `r modelProb$Estimate[2]`, `r int_to_words(modelProb$n[1])` models were classified as "Reproduced" `r modelProb$Estimate[1]`, `r int_to_words(modelProb$n[3])` were "Partially Reproduced" `r modelProb$Estimate[3]`, and `r modelProb$n[4]` were "Not Reproduced" `r modelProb$Estimate[4]`.
+
+```{r, out.width = "100%", out.height = "52%", fig.pos="H", fig.scap="Swimmer plot showing reproducibility status for linear regression coefficients."}
+#| label: fig-swimmerplot
+#| fig-cap: Swimmer plot showing reproducibility status for linear regression coefficients. Black filled circles indicate coefficients that were Reproduced, hollow circles indicate Incorrect Rounding, and crosses indicate Not Reproduced. Blue tiles represent coefficients from the first model, green from the second, and orange from the third model.
+
+knitr::include_graphics('figures/swimmer.png') 
+
+
+```
+
+```{r, results='asis'}
+
+cat(Table2chap5) 
+
+```
+
+## Discussion
+
+Findings from this study are consistent with prior evidence that computational reproducibility is often limited and that transparent, detailed reporting is necessary to enable the reproduction of published statistical results [@hardwicke2020empirical; @ioannidis2009repeatability].
+Even in cases where data were made available, we found that reproducing analyses was frequently hindered by incomplete or unclear methodological reporting [@ioannidis2009repeatability; @murphy2025reflections], with problems often evident in the manuscript before examining the underlying data [@jones2025linear]. In our sample, fewer than half of the papers provided a data dictionary, limiting the ability to identify model variables, interpret coding schemes, and reconstruct derived measures. When key variables or analytic decisions cannot be clearly identified, computational reproduction becomes substantially more challenging and, in some cases, not possible. These findings highlight the need to strengthen researcher training, reporting standards, and review practices [@hardwicke2020empirical]. Authors should clearly specify the statistical test conducted, the model used (including parameterisation and assumptions), the software package and version, and any custom functions or code. Full documentation of the dataset, including a data dictionary and all data-processing steps, is essential for computational reproducibility.
+
+One of the difficulties faced in reproducibility research is the lack of an agreed-upon definition of what constitutes reproducibility [@goodman2016does]. One common criticism of computational reproducibility in the literature is the overly rigid definition of exactness, which often fails to account for practical realities such as rounding errors and minor numerical differences arising from using different software (e.g., R vs SPSS) [@peng2021reproducible]. The appropriate threshold may also depend on the study's purpose. For example, Seibold et al. [@seibold2021computational] examined the reproducibility of longitudinal research focusing on Generalized Estimating Equations (GEE), where exact numerical agreement was not the primary goal, as different software packages often implement GEE differently, making small differences expected and unimportant.
+
+In our study, minor errors were frequently identified in papers for which reproduction was possible, including rounding discrepancies and typographic mistakes. Although these discrepancies typically did not alter the main conclusions, they highlight vulnerabilities in the publication process. Some may reflect systemic pressures faced by researchers, such as time constraints and the pervasive “publish or perish” culture in academia [@trueblood2025misalignment]. However, certain errors, for example, point estimates reported outside their corresponding confidence intervals, should have been detectable during peer review or editorial assessment. While many minor discrepancies likely arise during manuscript preparation, our study did not assess the stage at which errors were introduced, leaving open the possibility that some discrepancies may have emerged during journal production. Copy-editing and typesetting involve additional editorial modification, and although such processes are unlikely to account for most errors, variability in editing quality has been noted in academic commentary [@bloch2023copyediting].
+
+Our study also reinforces that while data sharing is a critical step toward transparency, availability alone does not guarantee reproducibility.
+A substantial proportion of shared datasets lacked sufficient documentation or completeness to support replication of the original analyses.
+Although some journals, funders, and institutions now mandate or encourage data sharing, these policies have often been evaluated primarily in terms of compliance rates, with less attention to the usability or quality of the shared data [@harris2019examining]. Without clear documentation, accessible data formats, and access to associated code, even datasets labelled as “available” may not enable meaningful verification or further research.
+
+Differentiating levels of reproducibility helped clarify the likely source of observed differences. In some cases, these were attributable to incorrect or missing data, such as differences in reported sample sizes between the manuscript and the available dataset, or to models that did not align with the descriptions provided in the paper. Another plausible explanation for partial reproducibility is that datasets may change throughout the research process. Although we did not assess data management practices directly, datasets often undergo multiple rounds of cleaning, transformation, or filtering, and it is possible that published tables reflected earlier dataset versions rather than the final dataset shared. In such situations, statistics may not align if outputs were not consistently updated following data revisions. Although the exact cause could not always be determined, likely explanations could sometimes be inferred based on the available information. These considerations highlight the importance of maintaining consistent documentation and version control throughout the analysis process.
+
+Several guidelines have been developed to promote reproducibility and transparency, including the FAIR principles (Findable, Accessible, Interoperable, and Reusable) [@wilkinson2016fair], the TOP Guidelines (Transparency and Openness Promotion) [@nosek2015promoting], and initiatives such as Registered Reports, which emphasise pre-specifying hypotheses and methods to reduce bias [@chambers2022past]. While the development of such frameworks remains important, our findings suggest that the priority should now shift toward strengthening the implementation of these existing principles, particularly the expectations around data sharing and documentation quality.
+
+Improving adherence to open science practices will require coordinated efforts across the research ecosystem [@jones2025linear]. In addition to journal policies, universities and research institutes must actively support reproducibility practices, and funding bodies should continue to embed expectations for data management and sharing into funding requirements. Encouragingly, there is growing international momentum: for example, the US National Institutes of Health (NIH) [@nih2024reproducibility] and the Australian National Health and Medical Research Council (NHMRC) [@nhmrc2023statement] have recently introduced mandatory data sharing plans. Strengthening and evaluating these efforts are critical to achieving transparency and reproducibility in practice, rather than remaining an aspirational goal.
+
+Computational reproducibility represents only one dimension of reproducibility. Statistical results may be numerically reproducible yet still lack scientific or statistical validity [@goodman2016does; @leek2015reproducible]. A more complete assessment of scientific reliability also considers inferential reproducibility, that is, whether the modelling approach and its assumptions support the conclusions drawn. In related work [@jones2026Inferential], we examine inferential reproducibility in the context of linear regression. Attention to both computational accuracy and inferential validity is therefore necessary to ensure that reported findings are sufficiently accurate and precise to guide evidence-based practice.
+
+### Data sharing and transparency
+
+Insufficient or inaccurate reporting of study design and data analysis makes replication challenging, hindering the reliability and cumulative nature of research findings [@chalmers2009avoidable; @wicherts2011willingness]. Poorly reported statistical analyses reduce the reproducibility of individual studies and undermine the scientific effort to build evidence-based practices. With only `r n_Repopcnt`% of papers found to be computationally reproducible, addressing these issues requires systemic changes, such as promoting transparent and rigorous reporting standards, encouraging collaboration with statisticians [@altman2002statistical], and emphasising reproducibility as a key component of research quality.
+
+Despite the introduction of data-sharing policies by some journals, the uptake of data sharing has remained limited [@serghiou2021assessment; @hamilton2023prevalence]. A 2023 systematic review examined data and code sharing practices across the medical and health sciences, synthesising findings from 105 meta-research studies covering over 2.1 million articles published between 2016 and 2021 [@hamilton2023prevalence].
+While 8% of articles declared their data to be publicly available, only 2% were confirmed to be publicly available. Factors associated with greater data sharing included journal policies mandating availability and funding requirements. The authors recommended that policymakers periodically audit publications for compliance [@hamilton2023prevalence]. These findings were consistent with our study, which also identified a substantial gap between data availability declarations and the usable, complete raw data provided by the authors.
+
+*PLOS ONE* was selected for the current study because it has promoted open science and data sharing, with policies dating back to 2014 [@PLOS2019]. *PLOS ONE* requires that all data underlying a study’s findings be made fully available at the time of publication, without restriction, except where legal or ethical constraints apply [@hrynaszkiewicz2021survey]. However, several studies have found that data availability statements are often inconsistent and ambiguous. Ellis et al. [@ellis2024assessing] argue that vague statements such as “data are available upon reasonable request” may function as a diversion, offering no assurance that data will be provided and lacking a clear definition of what constitutes a “reasonable” request. Poor adherence to data sharing has been documented, for example, Gabelica et al. [@gabelica2022many] assessed 1,792 manuscripts published in January 2019 across 333 open-access BioMed Central journals that included a willingness to share data, but found that only 122 (6.8%) actually provided the data upon request.
+
+*PLOS ONE* requires authors to include a Data Availability Statement specifying whether data are available, and if so, where and how they can be accessed (e.g., via a public repository or as supporting information) [@PLOS2019]. An assessment of papers published between the policy’s introduction in March 2014 and May 2016 [@federer2018data] found that only 20% deposited data in a public repository, the preferred method of the journal. Most authors instead reported that data were available within the paper or its supporting information. However, the study did not assess whether these forms of sharing met the requirements set by the journal’s policy.
+
+Our study identified a large discrepancy between authors’ statements that all data were included in the manuscript or in the supporting information and the actual availability of the raw data. Specifically, `r crosstabDNA` out of `r n_havedata` studies did not provide raw data to reproduce the linear regression analyses. Many of these authors by default reported "All relevant data are within the manuscript and its Supporting Information files", but in most cases, papers only included analyses tables with summary data. In some cases, no supporting information files were actually available. Some of these discrepancies could have been easily identified through simple automated checks at the submission stage, such as checking for data files. Cross-disciplinary reviews have noted substantial variation in reproducibility practices, with economics journals typically implementing stronger data and code requirements than health and biomedical journals [@national2019reproducibility; @gertler2018make]. Experience from journals of the American Economic Association shows that pre-publication data and code verification can be implemented in routine editorial workflows, although such practices are still rare in biomedical research [@hamilton2023prevalence; @vilhuber2020reproducibility].
+
+As part of broader efforts to promote open science and data transparency, *PLOS ONE* implemented several initiatives to improve data sharing and discovery. In 2021, it received a Wellcome Trust grant to support this work [@PLOS2022]. The initiative, first piloted in *PLOS Pathogens*, aimed to integrate data repositories such as Dryad and introduce visual badges to highlight accessible datasets, aligning with FAIR principles (Findable, Accessible, Interoperable, and Reusable) [@wilkinson2016fair]. In 2022, *PLOS* launched the Accessible Data icon, which is automatically applied to articles that link to recognised public repositories and retrospectively applied for papers published since 2016 [@PLOS2022]. However, because the icon relies on detecting repository links in data availability statements, it is only applicable to papers that use external repositories. It does not apply to cases where data are provided via supplementary files. While data badges may be useful for indicating when data are available, they do not address the core issue of data unavailability in the paper or the supporting information, despite the author's claims that they were provided.
+
+While `r int_to_words(freq(comp$Accessible_data_badge)[2])` papers in our sample had a *PLOS* data badge, one paper correctly stated that individual-level data were not available and provided simulated data. Two additional papers were assessed as not providing the data required to reproduce the linear regression analyses, either because key variables needed to be derived without accompanying description or code, or because the necessary variables for the model were not supplied. Therefore, the data-sharing badge in our sample did not accurately reflect whether the data were sufficient to enable computational reproducibility.
+
+Data badges have been investigated to assess whether their presence increases the likelihood that authors will share their data and code.
+While the evidence is mixed, some studies suggest that offering data badges as a reward has a limited impact [@cruwell2023s; @rowhani2020did].
+In a randomised controlled trial involving 80 author teams per group, Rowhani-Farid et al. [@rowhani2020did] found that offering a data sharing badge did not significantly increase data sharing, with similar odds of sharing between intervention and control groups (odds ratio = 0.9, 95% CI: 0.1, 9.0); only two teams in each group provided data.
+
+In a separate study evaluating the outcomes of a badge policy rather than its causal effect, Crüwell et al. [@cruwell2023s] assessed the computational reproducibility of 14 published articles. Although all articles provided at least some data and six provided analysis code, only one was exactly reproducible and three were essentially reproducible with minor deviations. Together, these studies suggest that incentive-based mechanisms like badges may be insufficient on their own. Crüwell et al. [@cruwell2023s] recommended that journals implement reproducibility checks during peer review rather than relying solely on author disclosure. This aligns with our study, which found that authors' disclosure of shared data is a poor substitute for validation on submission.
+
+## Practical recommendations
+
+Verifying that data are available when claimed in the methods section should be a standard part of compliance checks.
+When data are shared, a data dictionary must also be required to facilitate interpretation and reproducibility.
+A potential way to fund these compliance checks is through a tiered, user-pays model of reproducibility.
+Under such a model, researchers who opt for higher levels of verification, such as submitting fully reproducible code and analyses for independent review, would pay more upfront but receive formal third-party verification of reproducibility, which could be recognised in funding and promotion decisions.
+
+One of the main barriers to reproducing analyses was the difficulty in identifying which variables in the data corresponded to those used in the paper. Fewer than half of the studies with available data (`r as.data.frame(freq(comp$Data_Dictionary))["Yes", "Freq"]`/ `r crosstabDA`) included a data dictionary, and even when present, inconsistencies between variable names in the manuscript and those in the dictionary were common.
+This issue was particularly pronounced in studies with large numbers of variables, where identifying the correct inputs often involved a trial-and-error process, guessing likely variables and checking whether basic descriptive statistics (e.g., means or standard deviations) could be reproduced.
+
+Datasets shared in statistical package formats such as SPSS or Stata were somewhat more likely to include inbuilt data dictionaries (e.g., variable labels and metadata), making it easier to match variables between the manuscript and the dataset. In contrast, datasets provided as unprocessed files (e.g., CSVs, Excel) often lacked this critical information unless a separate dictionary was supplied.
+Easily matching variables between the paper and the dataset is essential for reproducibility. Therefore, we recommend that authors provide data dictionaries that explicitly list the variable names used in the dataset, alongside the variable labels and descriptions as reported in the paper.
+In addition, we recommend that non-readable file formats, such as PDFs, Word and image files, should never be used to share data.
+
+Reproducible code and data practices are essential for transparency, yet they remain uncommon in health and medical research [@hamilton2023prevalence]. Raising expectations of reproducibility must go hand in hand with formal training in reproducible workflows, not as an afterthought, but as a foundational skill set. This includes transparent coding, clearly structured data (e.g., long vs. wide format), and documented cleaning procedures. In our research, poor statistical reporting [@jones2025linear] and limited reproducibility were common, particularly when data cleaning steps were undocumented or unclear. These patterns may reflect a research culture shaped by publish-or-perish incentives, in which novelty and output volume are often rewarded over rigour and reproducibility [@smaldino2016natural].
+
+Expectations can influence behaviour in ways that reinforce existing norms. The Pygmalion effect [@rosenthal1968pygmalion], which describes how individuals’ performance can be shaped by their expectations, offers a valuable lens for understanding how norms can become self-reinforcing.
+When transparency and documentation are not explicitly valued, and when it is assumed that health researchers lack the technical skills to implement reproducible practices, these low expectations can become self-fulfilling. Data sharing may become a tick-box exercise, and even shared data may lack the context required for meaningful reuse. Addressing this requires more than compliance with data sharing policies; it calls for cultural change supported by institutional incentives, clear journal requirements, and practical training. Embedding these expectations in early career researchers, particularly through academic programs and early career development, helps shift norms toward greater transparency and meaningful data reuse.
+
+While the gold standard of reproducibility is for authors to provide code, it is recognised that many health researchers may not have the necessary training. To help improve reproducibility across all skill levels, we propose a Model Location and Specification Table (MLast) to accurately track analyses (Table 5). This table is metadata and could be presented in the supplementary material.
+For researchers with reproducibility skills, it could be automated by assigning statistical test labels in the same way tables or references are indexed. While code may improve reproducibility, it is often dense, requiring significant time and effort to track all the analyses.
+MLast provides a summary of analyses and would be a companion to any code. In the absence of code, the connection between the paper and the data is established by identifying the outcome variable in the paper and matching it to the variable names in the data using the model specification column. This connection will make the information machine-readable, thereby facilitating automated reproducibility.
+
+\input{tables/Table5chap6.tex}
+
+For researchers without reproducibility skills, MLast can be completed manually and requires no additional skills beyond identifying the statistical tests used. Many researchers may find it challenging to identify all the statistical tests used in their paper, especially in health research, which can take several years. During that time, data and analyses may pass through multiple hands, making it essential to document the process. Clear links between the research questions and the reported results are also critical to ensure transparency and reproducibility and could be added to the details section of MLast or added as an extra column.
+
+### General recommendations for improving computational reproducibility
+
+-   Provide the dataset in a machine-readable format, such as Excel or CSV files.
+-   Provide data in a recognised format, either wide (where each participant has their own row) or long (where participants may have multiple rows).
+-   Create a reproducible analysis workflow and share the code.
+-   Specify the software environment used for the analyses, including the statistical software, version number, and key packages or libraries. This is often critical for computational reproducibility, particularly when defaults differ across versions.
+-   Provide a minimal, analysis-ready dataset that includes all derived variables used in the statistical models, enabling independent computational reproduction of the results.
+-   Provide a data dictionary that exactly matches the variable names used in the manuscript, including clear definitions, coding, and units where applicable.
+-   Ensure that the number of observations reported in the paper matches the dataset provided, and that the dataset corresponds to the final version used in the analyses.
+-   Clarify any data exclusions or pre-processing steps (e.g. filtering, recoding, transformations) applied before analysis, including the rationale and number of observations affected.
+-   Clearly describe the modelling process. The model type and key specifications (e.g. link function, random effects, transformations, clustering and selected variables) should be stated explicitly and summarised in table footnotes to improve transparency.
+-   Clearly describe how categorical variables were coded in models, including the reference category, and indicate this clearly in tables or footnotes. Variables with more than two categories should be represented using appropriate contrasts.
+-   Provide complete model results in the Supporting Information, including all analyses conducted, full regression outputs (coefficients, confidence intervals, p-values), and all variables included for adjustment.
+
+### Comparison to other Reproducibility studies
+
+Early efforts to assess computational reproducibility using shared data highlighted both the promise and the challenges of replicating scientific findings. For example, Ioannidis et al. [@ioannidis2009repeatability] examined 18 microarray-based gene expression studies published in *Nature Genetics* (2005–2006), fully reproducing two and partially reproducing six. In their study, independent research teams assessed reproducibility, including aspects such as data processing, software details, and imaging parameters. Each team determined whether the main analysis results were (i) entirely reproduced in principle (all presented results were reproduced), (ii) partially reproduced (some results reproduced, others not), (iii) reproduced with discrepancies, (iv) partially reproduced with discrepancies, or (v) not reproduced at all. While the specific criteria and context differ, our study similarly emphasises graded reproducibility assessments rather than a binary reproduced/not reproduced assessment.
+
+A study examining the reproducibility of code in machine learning research was conducted by Raff [@raff2019step], who evaluated 255 papers published between 1984 and 2017. Reproducibility was defined as the ability to execute at least 75% of the original code to obtain the reported results, and 63% of the papers met this criterion. Only about half of the authors contacted responded, and successful reproduction was more common when authors engaged [@raff2019step].
+
+In contrast to Raff [@raff2019step], we did not contact the authors in our study. Reproducibility was assessed solely based on the methods sections, results, and any supporting information provided with the papers. Although this could have included analysis code, none of the studies in our sample that provided data included code. This approach was intentionally adopted to reflect the experience of secondary users interpreting published findings independently. As such, our findings reflect the practical barriers faced by researchers attempting to reproduce results without author assistance, barriers that may be underestimated in studies that request additional information directly from the authors.
+
+Laurinavichyute et al. [@laurinavichyute2022share] addressed the reproducibility challenge without direct author support.
+They recommended that authors verify whether their analyses can be reproduced solely from the materials they make available.
+Their study evaluated 59 papers published in the *Journal of Memory and Language* following the implementation of an open-data and code-sharing policy. They found 34% of papers were reproducible when accounting for rounding errors. This increased to 56% under more lenient criteria, allowing up to 20 deviations of up to 10%. The availability of analysis code was the strongest predictor of reproducibility, associated with a 40% higher probability of successful reproduction [@laurinavichyute2022share].
+
+A study by Harris et al. [@harris2019examining] examined the reproducibility of descriptive statistics and odds ratios across six papers in public health services and systems research. Their study judged reproducibility based on the percentage difference for individual results, whether statistical significance changed, and differences in the mean width of confidence intervals. Paper-level differences were calculated as the mean and standard deviation of percentage differences. While each paper showed consistency in at least one of the four areas examined, inconsistencies were also common, primarily due to transcription errors and missing details about data management and analysis [@harris2019examining].
+
+Although tolerance rules vary across computational reproducibility studies, prior frameworks have generally sought to distinguish trivial numerical variation from substantive discrepancies using predefined classification criteria. Hardwicke et al. [@hardwicke2021analytic] quantified discrepancies using relative error and classified them as minor or major based on percentage thresholds. Kambouris et al. [@kambouris2024computationally] similarly used relative error but additionally introduced an explicit tolerance band derived from the unit of the last reported decimal place ($10^{-d}$) to account for rounding precision. In a comparable manner, we derived two absolute tolerance thresholds from the number of decimal places (*d*) reported in the original paper (a stricter band: $0.5 \times 10^{-d}$; a more lenient band: $0.999 \times 10^{-d}$) and classified values as Reproduced, Incorrect Rounding, or Not Reproduced based on the absolute difference.
+This framework distinguishes plausible rounding variability from substantive numerical disagreement while remaining conceptually aligned with established computational reproducibility approaches.
+
+### Limitations
+
+A potential limitation of this study is that papers with more complete reporting may have had more opportunities to be classified as not reproduced compared with papers with minimal reporting. Although we adjusted for the probability of reproducibility classification using mixed multinomial regression to account for correlations within papers, this approach may not fully address the imbalance in reporting detail.
+Minor issues, such as typographical errors, were allowed within "Mostly Reproduced" models to account for limitations in reporting.
+Although incomplete reporting is closely linked to challenges in reproducibility, further work is needed to determine whether there is a systematic association between the extent of reporting and reproducibility outcomes.
+
+The primary author assessed data sharing and computational reproducibility, with input from other authors and a bioinformatician as needed.
+This was an exploratory project, and the templates and methodology were refined during the initial stages of the study as challenges arose and were addressed. While some results may have been inadvertently missed, detailed record-keeping and a fully reproducible workflow in R Quarto helped minimise errors. Although only 20 papers were assessed for computational reproducibility, this sample size is consistent with many reproducibility studies, which are small because reproducing each paper typically requires one to three days. Importantly, the overall finding of poor reproducibility in health research was consistent with prior literature [@ioannidis2009repeatability; @laurinavichyute2022share], supporting the validity of the conclusions despite our refinement of the planned methods.
+
+In some cases, poor reporting may have prevented the reproduction of results that could otherwise have been reproduced if the authors had been contacted. However, contacting authors was not undertaken, as the purpose of this study was to assess the extent to which results could be reproduced based solely on publicly available information and data. This approach reflects a broader goal: in the future, simple analyses are expected to become fully automated, based on accessible datasets and methods without the need for author involvement. Previous research has also shown that author follow-up can be time-consuming and often unsuccessful due to non-responsiveness [@raff2019step]. This study presents a semi-automated framework in which original results required manual extraction, while the subsequent reproducibility checks were fully automated, providing a foundation for future advancements in this area.
+
+## Conclusions
+
+The reproducibility of health research is crucial for assessing the reliability of findings, identifying effective treatments, and improving patient care. Although data sharing is widely promoted to enhance transparency and reproducibility, these goals can be achieved only if shared data are complete, well documented, and usable. Our study provides a framework for assessing computational reproducibility and demonstrates how to implement these assessments using reproducible templates. We also present general recommendations to support authors, reviewers, and editors by clearly specifying the materials and documentation required to enable independent computational reproduction of reported analyses.
+
+More than half of the studies assessed were not reproducible. To address this, we recommend that researchers share the code used for their analyses, allowing results to be automatically generated and directly reproduced from shared data. While achieving full reproducibility is a long-term goal and many researchers may currently lack the coding skills required, we propose a Model Location and Specification table (MLast) to improve transparency. MLast tracks where and what analyses were performed and can be created by researchers of all skill levels, including through automation. When used alongside a data dictionary, it functions as a metadata table that maps analyses and provides a clear overview of what was modelled and how. MLast may represent a critical missing component for future automated reproducibility assessments by enabling data to be more easily matched to the corresponding analyses.
+
+While the goal of eliminating all errors in publications is laudable, it is unlikely to be entirely achievable. Instead, reproducible research should aim to minimise errors and correct them transparently when identified through peer review or post-publication review. Recognising that scientific papers are not static, some have advocated treating them as “living” documents, allowing updates over time to address reproducibility issues or amend errors [@raff2019step]. This perspective reflects the dynamic nature of science and emphasises the shared responsibility for maintaining the accessibility, reproducibility, and reliability of research outputs. Achieving this requires greater investment in training researchers in reproducible practices and expanding support for meta-research to develop and evaluate strategies that improve statistical and research quality. Responsibility for reproducibility should not rest solely with authors or journals; it must also be recognised and supported at the institutional level and reinforced by funding bodies and publishers.
+
+# Acknowledgements
+
+We acknowledge Adrian llich for providing bioinformatics support and all the statisticians, including those acknowledged by name and others who chose to remain anonymous, who generously contributed their time to reviewing papers for this study, including: Ingrid Aulike, Peter Baker, Brigid Betz-Stablein, Enrique Bustamante, Taya Collyer, Susanna Cramb, Alanah Cronin, Laura Delaney, Zoe Dettrick, Eralda Gjika Dhamo, Des FitzGerald, Peter Geelan-Small, Edward Gosden, Alison Griffin, Jenine Harris, Cameron Hurst, Kyle James, Helen Johnson, Jessica Kasza, Karen Lamb, Stacey Llewellyn, James Martin, Miranda Mortlock, Satomi Okano, Alan Rigby, Michael Steele, Megan Steele, Jacqueline Thompson, Simon Turner, Michael Waller, Kevin Wang, Jace Warren, Natasha Weaver, Lachlan Webb, and Janet Williams.
