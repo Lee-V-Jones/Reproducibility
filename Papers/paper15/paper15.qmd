@@ -1,0 +1,2307 @@
+---
+title: "Paper 15: Livestock ownership, household food security and childhood anaemia in rural Ghana"
+author: Lee Jones \- Senior Biostatistician \- Statistical Review
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+
+filters:
+  - minus_html.lua
+
+format:
+  html:
+    smart: false
+    embed-resources: true
+    theme: journal
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message = FALSE)
+
+```
+
+```{css}
+a { color: blue !important;}
+h1 {font-size: 22px !important;}
+```
+
+```{r, results='hide'}
+lapply(c("figures", "data"), function(d) if (!dir.exists(d)) dir.create(d, recursive = TRUE))
+```
+
+```{r}
+
+
+normalQ<- "QQ-plot looks roughly normal."
+notnormalQ<- "QQ-plot indicates the residuals are not normally distributed."
+vifprob<-"Overall, when taking into account VIF and SE, the model has collinearity problems."
+vifnoprob<-"Overall, when taking into account VIF and SE, the model does not have collinearity issues."
+indDesNo<-"The study design is not independent and should be assessed using linear mixed models or generalized estimating equations."
+indDesYes<-"The study design seems to be independent."
+homYes<-"There is no distinct funnelling pattern observed, supporting homoscedasticity of residuals."
+homNo<-"The residuals vs. fitted plot is heteroscedastic with funnelling shape."
+somehet<-"Some heteroscedasticity is present in plots, and a sensitivity analysis using weighted or robust regression or wild bootstrapping is recommended."
+Cooksnoproblem<-"Cook's Distance and other influence diagnostics indicated no observations of concern."
+linyes<-"No linearity violation was observed in either plots or tests."
+linno<-"Plots and tests show an unaccounted non-linear relationship may be present."
+linplotno<-"Plots show an unaccounted non-linear relationship may be present."
+lintestno<-"Tests show an unaccounted non-linear relationship may be present."
+linout<-"Linearity issues are likely due to outliers within the data."
+p_repro<-"The p-values in this model were reproduced with mean differences for p-values close to zero."
+OutliersYes <-"Outliers present with high Cook's distance values indicating a sensitivity analysis should be performed to assess the change in the regression coefficients."
+MostCompRep<- "This model was mostly computationally reproducible, with minor rounding errors. P-values were reproduced and had the same interpretation, and regression coefficients did not change direction."
+CompRep<-"This model was computationally reproducible, with all reported statistics that were assessed being reproducible."
+NotCompRep<-"This model was not computationally reproducible."
+ Nosens<-"As this model was not computationally reproducible, inferential reproducibility was not considered, since the original analyses could not be reproduced and therefore, statistical assumptions could not be meaningfully compared or interpreted."
+
+evalAump<-"Evaluate the assumptions of the linear regression models by examining residuals, identifying influential outliers, and assessing multicollinearity among predictors. If any assumptions are violated, address them using appropriate methods."
+use_VIF<-"Formally assess multicollinearity using variance inflation factors (VIFs) and examination of coefficient standard errors."
+uniqueID <- "Include a unique person identifier (ID) in the dataset to ensure each individual can be distinctly identified."
+Scat<-"Consider using Scatterplots to visualise the relationships between variables."
+Box<-"Consider using box-plots to visualise the data."
+AdjR2<- "Adjusted R^2^ should be reported for multivariable models."
+datD<- "Include a data dictionary."
+Includedata<- "Include data to reproduce all analyses in the paper and supplementary files."
+Fullydescribe<- "Fully describe the model used in the linear regression."
+DetailAssump<-"Provide details of linear regression assumption checks."
+Code<- "Consider creating a reproducible analysis workflow and sharing the code."
+Update_dataAvail<-"Update the data availability statement to reflect the status of the data."
+coef95<-"Report linear regression coefficients and 95% confidence intervals."
+Analysis<-"Provide tables in the Supporting Information that present all analyses conducted in the paper, including full model outputs such as regression coefficients and all variables used for adjustment."
+Missing<-"Provide a clear description of the amount and pattern of missing data, along with the methods used to address missingness in the analyses."
+Modelling<-"Ensure that the modelling process is clearly described and applied consistently throughout the paper. The type of model and its key specifications should be included in the footnotes of the tables to improve transparency."
+File_format<- "Data underlying statistical analyses should be provided in a standard data format (e.g., CSV, XLSX, or similar) so it is machine readable."
+Data_format<-"Provide the data in a recognised long or wide format, with a unique participant identifier included to allow assessment of repeated measures and clustering."
+Program<-"Specify the statistical software package, version, and any relevant options, procedures, or settings required to reproduce the analysis."
+Stepwise<-"Ensure complete reporting of the stepwise model selection procedure, including the direction of selection (forward, backward, or bidirectional) and the criteria for variable entry and removal."
+Multiple_test<-"Acknowledge the issue of multiple testing in the results and/or limitations section, including whether adjustments were applied or why none were considered necessary."
+Effect_size<-"Place greater emphasis on the magnitude and practical relevance of regression coefficients, including their confidence intervals, rather than focusing predominantly on statistical significance."
+```
+
+# References
+
+Christian AK, Wilson ML, Aryeetey RNO, Jones AD (2019) Livestock ownership, household food security and childhood anaemia in rural Ghana. PLoS ONE 14(7): e0219310. <https://doi.org/10.1371/journal.pone.0219310>
+
+# Disclosure
+
+This reproducibility project was conducted to the best of our ability, with careful attention to statistical methods and assumptions. The research team comprises four senior biostatisticians (three of whom are accredited), with 20 to 30 years of experience in statistical modelling and analysis of healthcare data. While statistical assumptions play a crucial role in analysis, their evaluation is inherently subjective, and contextual knowledge can influence judgements about the importance of assumption violations. Differences in interpretation may arise among statisticians and researchers, leading to reasonable disagreements about methodological choices.
+
+Our approach aimed to reproduce published analyses as faithfully as possible, using the details provided in the original papers. We acknowledge that other statisticians may have differing success in reproducing results due to variations in data handling and implicit methodological choices not fully described in publications. However, we maintain that research articles should contain sufficient detail for any qualified statistician to reproduce the analyses independently.
+
+# Methods used in our reproducibility analyses
+
+There were two parts to our study. First, 100 articles published in *PLOS ONE* were randomly selected from the health domain and sent for post-publication peer review by statisticians. Of these, 95 included linear regression analyses and were therefore assessed for reporting quality. The statisticians evaluated what was reported, including regression coefficients, 95% confidence intervals, and p-values, as well as whether model assumptions were described and how those assumptions were evaluated. This report provides a brief summary of the initial statistical review.
+
+The second part of the study involved reproducing linear regression analyses for papers with available data to assess both computational and inferential reproducibility. All papers were initially assessed for data availability and the statistical software used. From those with accessible data, the first 20 papers (from the original random sample) were evaluated for computational reproducibility. Within each paper, individual linear regression models were identified and assigned a unique number. A maximum of three models per paper were selected for assessment. When more than three models were reported, priority was given to the final model or the primary models of interest as identified by the authors; any remaining models were selected at random.
+
+To assess computational reproducibility, differences between the original and reproduced results were evaluated using absolute discrepancies and rounding error thresholds, tailored to the number of decimal places reported in each paper. Results for each reported statistic, e.g., regression coefficient, were categorised as *Reproduced*, *Incorrect Rounding*, or *Not Reproduced*, depending on how closely they matched the original values. Each paper was then classified as *Reproduced*, *Mostly Reproduced*, *Partially Reproduced*, or *Not Reproduced*. The mostly reproduced category included cases with minor rounding or typographical errors, whereas partially reproduced indicated substantial errors were observed, but some results were reproduced.
+
+For models deemed at least partially computationally reproducible, inferential reproducibility was further assessed by examining whether statistical assumptions were met and by conducting sensitivity analyses, including bootstrapping where appropriate. We examined changes in standardized regression coefficients, which reflect the change in the outcome (in standard deviation units) for a one standard deviation increase in the predictor. Meaningful differences were defined as a relative change of 10% or more, or absolute differences of 0.1 (moderate) and 0.2 (substantial). When non-linear relationships were identified, inferential reproducibility was assessed by comparing model fit measures, including R², Akaike Information Criterion (AIC), and Bayesian Information Criterion (BIC). When the Gaussian distribution was not appropriate for the dependent variable, alternative distributions were considered, and model fit was evaluated using AIC and BIC.
+
+Results from the reproduction of the Christian et al. (2019) paper are presented below. An overall summary of results is presented first, followed by model-specific results organised within tab panels. Within each panel, the Original results tab displays the linear regression outputs extracted from the published paper. The *Reproduced* results tab presents estimates derived from the authors' shared data, along with a comprehensive assessment of linear regression assumptions. The *Differences* tab compares the original and reproduced models to assess computational reproducibility. Finally, the *Sensitivity analysis* tab evaluates inferential reproducibility by examining whether identified assumption violations meaningfully affected the results.
+
+# Summary from statistical review
+
+The paper examines the relationship between household livestock ownership and anaemia in children in rural Ghana. The dependent variable in the linear regression was animal-source food (ASF) consumption, measured as a count of the number of different ASF types consumed by each child the week before the interview. Simple descriptive statistics for ASF consumption indicated that the mean and standard deviation were both 1.2, with no discussion of the distribution or normality of residuals, which raised the question of whether a Poisson regression would have been more appropriate.
+
+# Data availability and software used
+
+Data were available in the Supporting Information and on Figshare in Stata format, with a partial data dictionary. The authors have included a full dataset with 1399 variables. Stata was used for analyses of linear regression models.
+
+# Regression sample
+
+Two regressions were identified, both multivariable with ASF Diversity as the outcome. A mediation analysis was also identified, but was not considered because it had a different purpose: to provide direct and indirect effects.
+
+# Computational reproducibility results
+
+The linear regression results for the paper could not be reproduced due to ambiguity in the ASF outcome variable: there are two possible options, ASF and ASF2. The simple mean and standard deviation for ASF by livestock ownership were reproduced. Identification of demographic variables for adjustment seemed reasonable. However, the results for the number of animals owned do not align with the published findings. Attempts to dichotomise the three livestock categories (poultry, sheep & goats, pigs) did not produce results that resemble the original analysis. Therefore, this paper was not found to be computationally reproducible.
+
+# Inferential reproducibility results
+
+As this paper was not computationally reproducible, inferential reproducibility was not considered, since the original analyses could not be reproduced and therefore, statistical assumptions could not be meaningfully compared or interpreted.
+
+# Recommended Changes
+
+-   Ensure variables were used in analyses and can be matched to the data dictionary.
+-   As the dataset contained many additional variables, the authors should provide a minimal dataset including only the variables used in the paper.
+-   `r evalAump`
+
+```{r}
+repdat <- data.frame(
+  paper_ID = as.numeric(15),
+  Title = as.character("Livestock ownership, household food security and childhood anaemia in rural Ghana."),
+  Summary = as.character("The paper examines the relationship between household livestock ownership and anaemia in children in rural Ghana. The dependent variable in the linear regression was animal-source food (ASF) consumption, measured as a count of the number of different ASF types consumed by each child the week before the interview. Simple descriptive statistics for ASF consumption indicated that the mean and standard deviation were both 1.2, with no discussion of the distribution or normality, which raised the question of whether a Poisson regression would have been more appropriate."),
+  Regression_sample =  as.character("Two regressions were identified, both multivariable with ASF Diversity as the outcome. A mediation analysis was also identified, but was not considered because it had a different purpose: to provide direct and indirect effects."),
+  Data_comments = as.character("Data were available in the Supporting Information and on Figshare in Stata format, with a partial data dictionary. The authors have included a full dataset with 1399 variables. The dataset contained 1412 observations, but only 300 had data."),
+  Data_Availability_Statement = as.character("All relevant data are within the manuscript and its Supporting Information files."),
+  DAS_correct = as.character("Yes"),
+  Data_Notionally_Available = as.character("Yes"),
+  Ethics_required_access_data = as.character("NA"),
+  Permission_required_access_data = as.character("NA"),
+  Data_Available = as.character("Yes"),
+  Anyrawdata = as.character ("Yes"),
+  HaveSupInfo = as.character ("Yes"),
+  Data_location = as.character("Supporting Information and figshare"),
+  Accessible_data_badge  = as.character("No"),
+  Data_Reason_not_found  = as.character("NA"),
+  Data_Dictionary = as.character("Yes"),
+  Format_file = as.character("dta"),
+  Format_data  = as.character("Wide"),
+  Package = as.character("Stata"),
+  Recommended_changes = as.character("Ensure variables were used in analyses and can be matched to the data dictionary. Produce a minimal dataset for the variables used in the paper. Evaluate the assumptions of the linear regression models by examining residuals, identifying influential outliers, and assessing multicollinearity among predictors. If any assumptions are violated, address them using appropriate methods."),
+  Reproduced = as.character("No"),
+  Rep_comment = as.character("Why data was provided in Stata format, was in strange format with authors have included full dataset with 1399 variables, dataset has downloaded with 1412 observations but only 300 of these observations have data. Some data had label that were interpretable other did not, making it diffcult to find variable for reproduction."),
+  Rating = as.numeric(0),
+  Unclear_N = as.character("Yes"),
+  Difficult_matching_variables = as.character ("Yes"),
+  Rounding = as.character ("NA"),
+  Unclear_model = as.character ("Yes"),
+  Typo = as.character ("NA"),
+  Data_Cleaning_required = as.character ("Yes"),
+  Data_Reformatting_required = as.character ("No"),
+  R1 = as.character("Not reproduced"),
+  R2 = as.character("Not reproduced"),
+  R3 = as.character("NA"),
+  E1 = as.character("NA"),
+  E2 = as.character("NA"),
+  E3 = as.character("NA"),
+  E1_Dist = as.character("NA"),
+  E2_Dist  = as.character("NA"),
+  E3_Dist  = as.character("NA"),
+  E1_Mixed = as.character("NA"),
+  E2_Mixed  = as.character("NA"),
+  E3_Mixed = as.character("NA"),
+  E1_Linkfunction = as.character("NA"),
+  E2_Linkfunction = as.character("NA"),
+  E3_Linkfunction  = as.character("NA"),
+  E1_RSE = as.character("NA"),
+  E2_RSE  = as.character("NA"),
+  E3_RSE  = as.character("NA"),
+  E1_Nonlinear = as.character("NA"),
+  E2_Nonlinear  = as.character("NA"),
+  E3_Nonlinear  = as.character("NA"),
+  E1_Transformation = as.character("NA"),
+  E2_Transformation  = as.character("NA"),
+  E3_Transformation  = as.character("NA"),
+  E1_Regularisation = as.character("NA"),
+  E2_Regularisation = as.character("NA"),
+  E3_Regularisation  = as.character("NA"),
+  E1_boot = as.character("NA"),
+  E2_boot  = as.character("NA"),
+  E3_boot  = as.character("NA"),
+  Comp_reproduce = as.character("No"),
+  Infer_reproduce = as.character("NA"),
+  Comp_comment = as.character("The linear regression results for the paper could not be reproduced due to ambiguity in the ASF outcome variable: there are two possible options, ASF and ASF2. The simple mean and standard deviation for ASF by livestock ownership were reproduced. Identification of demographic variables for adjustment seemed reasonable. However, the results for the number of animals owned do not align with the published findings. Attempts to dichotomise the three livestock categories (poultry, sheep & goats, pigs) did not produce results that resemble the original analysis. Therefore, this paper was not found to be computationally reproducible."),
+  Infer_comment = as.character("NA"),
+  stringsAsFactors = FALSE
+)
+
+write.csv(repdat, file="data/repdat_15.csv")
+
+
+```
+
+```{r pack}
+library(tidyverse)
+library(emmeans)
+library(haven)#spss
+library(broom) # for regression tables
+library(summarytools) # for tables
+library (gtsummary) #for models 
+library(tables) # for tables
+library (flextable)
+library(psych)
+library(MASS)
+library (leaps)
+library(lmboot)
+library(car)
+library(jtools)
+library(lmtest)
+library(sandwich)
+library(httr)
+library(readxl)
+library(jmv)
+library(pillar)
+library(htmltools)
+library(gridExtra)
+library(blandr)
+library(rvest)
+library(effects)
+library(visreg)
+library(forestplot)
+library(conflicted)
+library(httr)
+library(forcats)
+library(cowplot)
+
+conflict_prefer("compose", "flextable") 
+conflict_prefer("rename", "dplyr") 
+conflict_prefer("filter", "dplyr") 
+conflict_prefer("select", "dplyr") 
+
+# capture session information in a text file
+sessionInfo() %>% capture.output(file="session_info.txt")
+
+#global options
+options(digits = 5)
+
+#flextable global rounding
+set_flextable_defaults(digits = 3)
+otherRound<-3
+dig<-3
+thresround<-4
+
+options(scipen = 999)
+
+#GT summary theme
+my_theme <-
+  list(
+    # round large p-values to two places
+    "pkgwide-fn:pvalue_fun" = function(x) style_pvalue(x, digits = 3),
+    "pkgwide-fn:prependpvalue_fun" = function(x) style_pvalue(x, digits = 3, prepend_p = TRUE),
+    # report median (IQR) and n (percent) as default stats in `tbl_summary()`
+    "tbl_summary-str:continuous_stat" = "{mean} ({SD})",
+    "tbl_summary-str:categorical_stat" = "{n} ({p}%)") 
+ 
+set_gtsummary_theme(my_theme)
+
+Sround <- function(x, k) {
+  trimws(format(round(x, k), nsmall = k, scientific = FALSE))
+}
+
+
+
+
+# Function to round to 4 decimal places
+round_p <- function(x) ifelse(is.na(x), "", ifelse(x < 0.001, "<0.001", sprintf("%.4f", x)))
+
+# Function to print summary about VIF values
+printvif<- function(vif_values) {
+  if (all(is.na(vif_values))) {
+    print("All values are NA")
+  } else if (any(!is.na(vif_values) & vif_values >= 5)) {
+    print("Collinearity issues")
+  } else if (any(!is.na(vif_values) & vif_values < 5 & vif_values >= 3)) {
+    print("All VIF values are under five, indicating some colinearity but within reasonable bounds.")
+  } else if (any(!is.na(vif_values) & vif_values < 3)) {
+    print("All VIF values are under three, indicating no collinearity issues.")
+  }
+}
+
+# Function to generate bullet points for each variable
+generate_bullet_points <- function(data) {
+  bullet_points <- data %>%
+    rowwise() %>%
+    mutate(text = paste0("* ", term, ": ", Condition)) %>%
+    pull(text)
+  
+  return(bullet_points)
+}
+
+
+ols_plot_dfbetas_fixed_y <- function(model, print_plot = TRUE, fixed_ylim = TRUE) {
+  olsrr:::check_model(model)
+  
+  dfb <- dfbetas(model)
+  n <- nrow(dfb)
+  np <- ncol(dfb)
+  threshold <- 2 / sqrt(n)
+  myplots <- list()
+  outliers <- list()
+  
+  # Precompute y-axis range and expand upper limit if fixed_ylim is TRUE
+  if (fixed_ylim) {
+    y_range <- range(dfb, na.rm = TRUE)
+    y_range[2] <- y_range[2] + 0.05 * diff(y_range)  # Add 5% buffer at top
+  }
+
+  for (i in seq_len(np)) {
+    dbetas <- dfb[, i]
+    df_data <- data.frame(obs = seq_len(n), dbetas = dbetas)
+    d <- olsrr:::ols_prep_dfbeta_data(df_data, threshold)
+    f <- olsrr:::ols_prep_dfbeta_outliers(d)
+
+    # Determine where to place threshold label
+    if (fixed_ylim) {
+      y_text_pos <- y_range[2] - 0.01 * diff(y_range)  # Slightly below max
+    } else {
+      y_range_this <- range(d$dbetas, na.rm = TRUE)
+      y_text_pos <- y_range_this[2] + 0.05 * diff(y_range_this)
+    }
+
+    p <- ggplot(d, aes(x = obs, y = dbetas, label = txt, ymin = 0, ymax = dbetas)) +
+      geom_linerange(colour = "blue") +
+      geom_hline(yintercept = c(0, threshold, -threshold), colour = "red") +
+      geom_point(colour = "blue", shape = 1) +
+      geom_text(
+        hjust = -0.2, nudge_x = 0.15, size = 4, family = "serif",
+        fontface = "italic", colour = "darkred", na.rm = TRUE
+      ) +
+      annotate("text", x = Inf, y = y_text_pos, hjust = 1.1, vjust = 0,
+               family = "serif", fontface = "italic", colour = "darkred", size = 4,
+               label = paste("Threshold:", round(threshold, 2))) +
+      xlab("Observation") +
+      ylab("DFBETAS") +
+      ggtitle(paste("Influence Diagnostics for", colnames(dfb)[i]))
+
+    if (fixed_ylim) {
+      p <- p + ylim(y_range)
+    }
+
+    myplots[[i]] <- p
+    outliers[[i]] <- f
+  }
+
+  if (print_plot) {
+    cowplot::plot_grid(plotlist = myplots, ncol = 2)
+  } else {
+    return(list(plots = myplots, outliers = outliers))
+  }
+}
+
+
+## modiy cooks distance 
+ols_plot_cooksd_chart_custom <- function(model, type = 1, threshold = NULL, print_plot = TRUE) {
+  olsrr:::check_model(model)
+  k <- olsrr:::ols_prep_cdplot_data(model, type)
+  d <- olsrr:::ols_prep_outlier_obs(k)
+  f <- olsrr:::ols_prep_cdplot_outliers(k)
+  
+  if (is.null(threshold)) {
+    threshold <- k$ts
+  }
+
+  # Calculate upper limit and label position
+  y_max <- max(d$cd, na.rm = TRUE)
+  y_range <- range(d$cd, na.rm = TRUE)
+  y_buffer <- 0.1 * diff(y_range)
+  y_upper <- y_max + y_buffer
+  y_text_pos <- y_upper - 0.01 * diff(c(y_range[1], y_upper))
+
+  # Create plot
+  p <- ggplot(d, aes(x = obs, y = cd, label = txt, ymin = min(cd), ymax = cd)) +
+    geom_linerange(colour = "blue") +
+    geom_point(shape = 1, colour = "blue") +
+    geom_text(
+      vjust = -1, size = 4, family = "serif", fontface = "italic",
+      colour = "darkred", na.rm = TRUE
+    ) +
+    geom_hline(yintercept = threshold, colour = "red") +
+    geom_hline(yintercept = 0.5, linetype = "dotted", colour = "red") +  # add 0.5 line
+    annotate("text", x = Inf, y = y_text_pos, hjust = 1.1, vjust = 0,
+             family = "serif", fontface = "italic", colour = "darkred", size = 4.5,
+             label = paste("Threshold:", round(threshold, 3))) +
+    ylim(0, y_upper) +
+    xlab("Observation") +
+    ylab("Cook's D") +
+    ggtitle("Cook's Distance Plot")
+
+  if (print_plot) {
+    suppressWarnings(print(p))
+  } else {
+    return(list(plot = p, outliers = f, threshold = threshold))
+  }
+}
+
+
+# modify DFFIT
+ols_plot_dffits_custom <- function(model, size_adj_threshold = TRUE, print_plot = TRUE) {
+  olsrr:::check_model(model)
+  data <- olsrr:::ols_prep_dffits_plot_data(model, size_adj_threshold)
+
+  d <- data$d
+  threshold <- data$dft
+  title <- data$title
+
+  # Determine y-axis range with buffer
+  y_max <- max(d$dbetas, na.rm = TRUE)
+  y_min <- min(d$dbetas, na.rm = TRUE)
+  buffer <- 0.1 * max(abs(c(y_max, y_min, threshold)))
+  y_upper <- max(y_max, threshold) + buffer
+  y_lower <- min(y_min, -threshold) - buffer
+
+  # Position the threshold label just inside the top
+  y_text_pos <- y_upper - 0.01 * (y_upper - y_lower)
+
+  p <- ggplot(d, aes(x = obs, y = dbetas, label = txt, ymin = 0, ymax = data$dfm)) +
+    geom_linerange(colour = "blue") +
+    geom_hline(yintercept = c(0, threshold, -threshold), colour = "red") +
+    geom_point(colour = "blue", shape = 1) +
+    geom_text(
+      hjust = -0.2, nudge_x = 0.15, size = 4.2,  # <- increased size
+      family = "serif", fontface = "italic", colour = "darkred", na.rm = TRUE
+    ) +
+    annotate(
+      "text", x = Inf, y = y_text_pos, hjust = 1.1, vjust = 0,
+      family = "serif", fontface = "italic", colour = "darkred", size = 4.5,
+      label = paste("Threshold:", round(threshold, 2))
+    ) +
+    ylim(y_lower, y_upper) +
+    xlab("Observation") +
+    ylab("DFFITS") +
+    ggtitle(paste("DFFIT Plot"))
+
+  if (print_plot) {
+    suppressWarnings(print(p))
+  } else {
+    return(list(plot = p, outliers = data$f, threshold = round(threshold, 2)))
+  }
+}
+
+plot_covratio <- function(model) {
+  inf <- influence.measures(model)$infmat
+  covr <- unname(inf[, "cov.r"])
+  n    <- nobs(model)
+  p    <- length(coef(model))  # includes intercept
+  thr  <- 3 * p / n
+  df   <- data.frame(obs = seq_along(covr), covr = covr)
+  
+  op <- par(mfrow = c(1,1))
+  on.exit(par(op))
+  plot(df$obs, df$covr, pch = 19, xlab = "Observation",
+       ylab = "COVRATIO (cov.r)",
+       main = "Influence on coefficient covariance (COVRATIO)")
+  abline(h = 1, lty = 2)
+  abline(h = 1 + thr, lty = 3)
+  abline(h = 1 - thr, lty = 3)
+  labs <- which(covr > 1 + thr | covr < 1 - thr)
+  if (length(labs)) text(labs, covr[labs], labels = labs, pos = 3, cex = 0.8)
+}
+
+
+```
+
+```{r, results='hide'}
+
+# Step 1: Specify the URL of the .dta file
+url <- "https://doi.org/10.1371/journal.pone.0219310.s001"
+
+# Step 2: Download the file to a temporary location
+temp_file <- tempfile(fileext = ".dta")
+GET(url, write_disk(temp_file, overwrite = TRUE))
+
+# Step 3: Read the .dta file into R
+data <- read_dta(temp_file)
+
+dat <- data %>% 
+  filter(!is.na(deviceid)) %>% 
+  #mutate(across(everything(), ~ `label<-`(.x, NULL))) %>% 
+  mutate(Owns_any_livestock=case_when(LIVESTOCK==0 ~ "No", LIVESTOCK==1 ~ "Yes",  TRUE ~ NA_character_ )) %>%  
+  mutate(Owns_any_livestock = factor(Owns_any_livestock, levels = c("No", "Yes"))) %>% 
+  mutate(Household_wealth=case_when(finalwealth==1 ~ "Low", finalwealth==2 ~ "Medium", finalwealth==3 ~ "High", TRUE ~ NA_character_ )) %>%
+  mutate(Household_wealth = factor(Household_wealth, levels = c("Low", "Medium", "High"))) %>% 
+  mutate(Sex_of_household_head=case_when(hhhsex==0 ~ "Male", hhhsex==1 ~ "Female", TRUE ~ NA_character_)) %>% 
+  mutate(Sex_of_household_head = factor(Sex_of_household_head, levels = c("Male", "Female"))) %>% 
+  mutate(Caregiver_Marital_Status=case_when(married==0 ~ "Single", married==1 ~ "Married", TRUE ~ NA_character_)) %>% 
+  mutate(Caregiver_Marital_Status = factor(Caregiver_Marital_Status, levels = c("Single", "Married"))) %>%
+  mutate(Education=case_when(education==0 ~"No", education==1 ~"Preschool/Primary", education==2 ~"Secondary", TRUE ~ NA_character_ )) %>% 
+  mutate(Education= factor(Education, levels = c("No", "Preschool/Primary", "Secondary"))) %>% 
+  mutate(Child_sex=case_when(childsex==0 ~ "Female", childsex==1 ~ "Male", TRUE ~ NA_character_)) %>% 
+  mutate(Child_sex= factor(Child_sex, levels = c("Female", "Male"))) %>%  # check
+  mutate(poultry2= case_when(poultry==0 ~ 0, poultry > 0 ~ 1, TRUE ~ NA_real_ )) %>% 
+  mutate(Sheep_goats2= case_when(Sheep_goats==0 ~ 0, Sheep_goats > 0 ~ 1, TRUE ~ NA_real_ )) %>% 
+  mutate(pigs2= case_when(pigs==0 ~ 0, pigs > 0 ~ 1, TRUE ~ NA_real_ )) %>% 
+  dplyr::select(ASF, ASF2, poultry, poultry2, Sheep_goats, Sheep_goats2, pigs, pigs2, Owns_any_livestock, Household_wealth, Sex_of_household_head,  household_size,  Caregiver_Marital_Status, Education, Child_sex, childage)
+
+
+namey1<-"ASF Diversity"
+namey2<-"ASF Diversity"
+
+m1y <- "ASF"
+m1x1 <- "poultry"
+m1x2 <- "Sheep_goats"
+m1x3 <- "pigs"
+
+m2y <- "ASF"
+m2x1 <- "poultry"
+m2x2 <- "Sheep_goats"
+m2x3 <- "pigs"
+m2x4 <- "Owns_any_livestock"
+m2x5 <- "Household_wealth"
+m2x6 <- "household_size"
+m2x7 <- "Sex_of_household_head"
+m2x8 <- "Caregiver_Marital_Status"
+m2x9 <- "Education"
+m2x10 <- "Child_sex"
+m2x11 <- "childage"
+
+my.model<-lm(ASF ~ poultry + Sheep_goats + pigs + Owns_any_livestock + Household_wealth +  household_size + Sex_of_household_head +   Caregiver_Marital_Status + Education + Child_sex+ childage, data=dat)
+
+
+  
+ASFcheck<-dat %>%  select(ASF, ASF2)
+
+predictors1 <- c("poultry", "Sheep_goats", "pigs")
+con1 <- c("poultry", "Sheep_goats", "pigs")
+factor_vars1 <- character(0)  # No factor variables
+ref_levels1 <- character(0)  # No reference levels
+
+
+predictors2 <- c("poultry", "Sheep_goats", "pigs", "Owns_any_livestock", "Household_wealth",   "household_size", "Sex_of_household_head",   "Caregiver_Marital_Status", "Education", "Child_sex", "childage")
+con2 <- c("poultry", "Sheep_goats", "pigs", "household_size", "childage")
+factor_vars2 <- c("Owns_any_livestock", "Household_wealth", "Sex_of_household_head",  "Caregiver_Marital_Status", "Education", "Child_sex")
+ref_levels2 <- c("No","Low", "Male", "Single", "No", "Female")
+
+
+# Construct the formula dynamically, need as many %s x variables
+formula_str1 <- sprintf("%s ~ %s + %s + %s", m1y, m1x1, m1x2, m1x3)
+model_formula1 <- as.formula(formula_str1)
+
+formula_str2 <- sprintf("%s ~ %s + %s + %s + %s + %s + %s + %s + %s + %s + %s + %s", m2y, m2x1, m2x2, m2x3, m2x4, m2x5, m2x6, m2x7, m2x8, m2x9, m2x10, m2x11)
+model_formula2 <- as.formula(formula_str2)
+
+paper_ID<-15
+num_models<-2
+
+
+
+dat1<-dat%>%  dplyr::select(ASF, ASF2, poultry, poultry2, Sheep_goats, Sheep_goats2, pigs, pigs2, Owns_any_livestock, Household_wealth, Sex_of_household_head,  household_size,  Caregiver_Marital_Status, Education, Child_sex, childage)  %>% 
+   tbl_summary(by = Owns_any_livestock,  type = list(c(ASF,ASF2) ~ 'continuous'), missing = "no",  percent = "col", digits = list(all_continuous() ~ 1, all_categorical() ~ c(0,1))) %>%
+     add_n %>%
+as_flex_table %>% set_table_properties(layout = "autofit") %>% fontsize(size = 9,  part = "all")
+
+dat1
+```
+
+```{r}
+
+# randomly selecting linear regressions
+#not chosen randomly as the main outcome variables
+
+```
+
+```{r, results='hide', fig.show='hide'}
+# Automatically generate model names
+model_names <- paste0("Model ", seq_len(num_models))
+
+# Automatically gather model formulas
+model_formulas <- mget(paste0("model_formula", seq_len(num_models)))
+
+# Automatically gather predictors
+predictor_sets <- mget(paste0("predictors", seq_len(num_models)))
+
+# Automatically gather dependent variables
+dependent_vars <- mget(paste0("m", seq_len(num_models), "y"))
+
+# Automatically gather custom y-axis names
+custom_y_names <- mget(paste0("namey", seq_len(num_models)))
+
+# Automatically gather continuous variable lists
+continuous_vars_list <- mget(paste0("con", seq_len(num_models)))
+
+# Automatically gather factor variable lists
+factor_vars_list <- mget(paste0("factor_vars", seq_len(num_models)))
+
+# Automatically gather reference levels lists
+ref_levels_list <- mget(paste0("ref_levels", seq_len(num_models)))
+
+
+# Ensure that ref_levels_list has the same length as model_formulas
+while (length(ref_levels_list) < length(model_formulas)) {
+  ref_levels_list <- c(ref_levels_list, list(character(0)))  # Add empty lists to match the number of models
+}
+
+# Function to dynamically assign data frames to the global environment
+assign_df <- function(name, df) {
+  assign(name, df, envir = .GlobalEnv)
+}
+
+
+# Function to generate visreg plots
+generate_visreg_plots <- function(model, predictors, dependent_var, custom_y_name, i) {
+  plot_list <- list()
+  model_coeffs <- names(coef(model))  # Get the names of the coefficients in the model
+  
+  # Dynamically calculate global y-limits for the entire model
+  visreg_outputs <- lapply(predictors, function(predictor) visreg(model, predictor, plot = FALSE))
+  y_limits <- range(unlist(lapply(visreg_outputs, function(x) c(x$res$visregRes, x$res$visregFit))), na.rm = TRUE)
+  
+  for (j in seq_along(predictors)) {
+    predictor <- predictors[j]
+    
+    # Check if the predictor or its factor levels are in the model
+    predictor_in_model <- any(grepl(predictor, model_coeffs))
+    
+    if (predictor_in_model) {
+      visreg_output <- visreg(model, predictor, gg = TRUE, overlay = TRUE, points = list(size = 4, col = "black")) +
+        theme_bw() +
+        theme(
+          axis.title = element_text(size = 24),  # Increase axis title size
+          axis.text = element_text(size = 24),   # Increase axis text size
+          plot.title = element_text(size = 16),  # Increase plot title size
+          legend.text = element_text(size = 16)  # Increase legend text size
+        ) +
+        ylim(y_limits) +  # Apply global y-limits
+        ylab(custom_y_name)  # Set the y-axis label to the custom name
+      
+      # Save each visreg plot individually
+      ggsave(paste0("figures/visreg_plot_", i, "_", predictor, ".png"), 
+             plot = visreg_output, width = 8, height = 8, dpi = 300)
+      
+      plot_list[[j]] <- visreg_output
+    }
+  }
+  return(plot_list)
+}
+
+# Corrected loop to fit the model and generate plots
+for (i in seq_along(model_formulas)) {
+  model_formula <- model_formulas[[i]]
+  model_name <- model_names[[i]]
+  predictors <- predictor_sets[[i]]
+  dependent_var <- dependent_vars[[i]]
+  custom_y_name <- custom_y_names[[i]]
+  continuous_vars <- continuous_vars_list[[i]]
+  factor_vars <- factor_vars_list[[i]]
+  
+  # Check if ref_levels_list has an entry for the current model
+  if (i > length(ref_levels_list)) {
+    cat("Warning: Index", i, "is out of bounds for ref_levels_list, which has length", length(ref_levels_list), "\n")
+    next  # Skip to the next iteration if the index is out of bounds
+  }
+  
+  ref_levels <- ref_levels_list[[i]]
+  
+  # Ensure that ref_levels are single values
+  validated_ref_levels <- list()
+  for (j in seq_along(factor_vars)) {
+    if (length(ref_levels[j]) == 1) {
+      validated_ref_levels[[j]] <- list(var = factor_vars[j], ref = ref_levels[j])
+    } else {
+      warning(paste("Skipping reference level for", factor_vars[j], "as it is not a single value."))
+    }
+  }
+  
+  # Fit the linear model
+  model <- lm(model_formula, data = dat)
+  
+  
+  
+  # Create the arguments list dynamically for linReg
+  linReg_args <- list(
+    data = dat,
+    dep = dependent_var,
+    covs = continuous_vars,  # Use only continuous predictors here
+    blocks = list(predictors),  # Include both continuous and categorical predictors in blocks
+    r2Adj = TRUE,
+    aic = TRUE,
+    rmse = TRUE,
+    modelTest = TRUE,
+    anova = TRUE,
+    ci = TRUE,
+    stdEst = TRUE,
+    ciStdEst = TRUE,
+    norm = TRUE,
+    qqPlot = TRUE,
+    resPlots = TRUE,
+    durbin = TRUE,
+    collin = TRUE,
+    cooks = TRUE
+  )
+  
+ # Add factors and reference levels if present
+if (length(factor_vars) > 0) {
+  linReg_args$factors <- factor_vars
+  if (length(validated_ref_levels) > 0) {
+    linReg_args$refLevels <- validated_ref_levels
+  }
+}
+
+# 1. Dummy-coded coefficients (reference group coding)
+linReg_args_dummy <- linReg_args
+linReg_args_dummy$intercept <- "refLevel"  # correct argument
+M <- do.call(jmv::linReg, linReg_args_dummy)
+
+# 2. ANOVA table relative to grand mean (effect coding)
+linReg_args_anova <- linReg_args
+linReg_args_anova$intercept <- "grandMean"
+M_anova <- do.call(jmv::linReg, linReg_args_anova)
+
+  
+  # Process and store coefficients
+  coefficients_df <- as.data.frame(M$models[[1]]$coef) %>%  
+    mutate(Model = i, paper_ID = paper_ID, origin = "Reproduced") %>%
+    mutate(n = 1:nrow(M$models[[1]]$coef$asDF))
+  
+  assign_df(paste0("R_coefficients_raw_df_", i), coefficients_df) 
+  
+  assign_df(paste0("R_coefficients_flextable_", i), coefficients_df %>%
+              dplyr::select(term, est, se, lower, upper, t, p) %>% 
+              mutate(p = sapply(p, round_p)) %>%
+              flextable() %>%
+              set_table_properties(layout = "autofit") %>%
+              set_header_labels(term = "Term", est = "B", se = "SE", lower = "Lower", upper = "Upper", p = "p-value") %>%
+              colformat_double(digits = dig) %>%
+              add_footer_lines("SE = Standard error; Lower = lower confidence interval; Upper = upper confidence interval."))
+  
+  # Replicate rows for fit statistics
+  fit <- M$modelFit$asDF %>% 
+    mutate(Model = i, paper_ID = paper_ID, origin = "Reproduced") %>% 
+    cbind(dplyr::select(coefficients_df, term, n)) %>% select(-model)
+  assign_df(paste0("R_fit_stats_raw_df_", i), fit)
+  
+  assign_df(paste0("R_fit_stats_flextable_", i), M$modelFit$asDF %>%
+              select(-model) %>%  
+              mutate(p = sapply(p, round_p)) %>%
+              mutate(across(c(df1, df2), ~ Sround(.x, 0))) %>%
+              flextable() %>%
+              set_header_labels(r = "R", r2 = "R2", r2Adj = "R2Adj", aic = "AIC", rmse = "RMSE", f = "F", df1 = "DF1", df2 = "DF2", p = "p-value") %>%
+              set_table_properties(layout = "autofit") %>%
+              compose(i = 1, j = "r2", part = "header", value = as_paragraph("R", as_sup("2"))) %>%
+              compose(i = 1, j = "r2Adj", part = "header", value = as_paragraph("R", as_sup("2"), "Adj")) %>%
+              colformat_double(digits = 3) %>%
+              add_footer_lines(as_paragraph(
+                as_i("R"), as_sup("2"), " Adj = Adjusted ", as_i("R"), as_sup("2"), "; ",
+                "AIC = Akaike Information Criterion; RMSE = The Root Mean Squared Error; DF1 = Degrees of freedom for the model; DF2 = Degrees of freedom for the residuals."
+              )))
+  
+  # Process and store ANOVA table
+  assign_df(paste0("R_anova_raw_df_", i), M_anova$models[[1]]$anova$asDF %>%  
+              mutate(Model = i, paper_ID = paper_ID, origin = "Reproduced", n = c(2:nrow(.), 1)))
+  
+  assign_df(paste0("R_anova_flextable_", i), M_anova$models[[1]]$anova$asDF %>%
+              mutate(across(c(df), ~ Sround(.x, 0))) %>%
+              mutate(p = sapply(p, round_p)) %>%
+              mutate(F = ifelse(F == "NA", "", F)) %>%
+              flextable() %>%
+              set_table_properties(layout = "autofit") %>%
+              set_header_labels(term = "Term", ss = "SS", df = "DF", ms = "MS", p = "p-value") %>%
+              colformat_double(digits = dig) %>%
+              add_footer_lines("SS = Sum of Squares; DF = Degrees of freedom; MS = Mean Square; Calculated using type III SS."))
+  
+  
+  height_per_row <- 400  # You can adjust this value based on your layout preference
+  
+  # Calculate the height based on the number of rows
+  num_rows <- nrow(M$models[[1]]$anova$asDF)
+  calculated_height <- num_rows * height_per_row
+  
+  # Ensure a minimum height in case there are very few rows
+  min_height <- 1200  # Set a minimum height
+  final_height <- max(calculated_height, min_height)
+  
+  height_per_row1 <- 3  # You can adjust this value based on your layout preference
+  
+  # Calculate the height based on the number of rows
+  num_rows1 <- nrow(M$models[[1]]$anova$asDF)
+  calculated_height1 <- num_rows1 * height_per_row1
+  
+  # Ensure a minimum height in case there are very few rows
+  min_height1 <- 12  # Set a minimum height
+  final_height1 <- max(calculated_height1, min_height1)
+  
+  
+  
+  # Process and store normality tests (KS and SW separately)
+  assign_df(paste0("R_normality_ks_raw_df_", i), tidy(ks.test(augment(model)$.std.resid, "pnorm")) %>%
+              mutate(Model = i, paper_ID = paper_ID, origin = "Reproduced"))
+  
+  assign_df(paste0("R_normality_ks_flextable_", i), tidy(ks.test(augment(model)$.std.resid, "pnorm")) %>%
+              mutate(p.value = sapply(p.value, round_p)) %>% 
+              dplyr::select(-alternative) %>% 
+              flextable() %>%
+              set_table_properties(layout = "autofit") %>%
+              set_header_labels(statistic = "Statistic", p.value = "p-value", method = "Method") %>%
+              colformat_double(digits = dig))
+  
+  assign_df(paste0("R_normality_sw_raw_df_", i), tidy(shapiro.test(augment(model)$.std.resid)) %>%
+              mutate(Model = i, paper_ID = paper_ID, origin = "Reproduced"))
+  
+  assign_df(paste0("R_normality_sw_flextable_", i), tidy(shapiro.test(augment(model)$.std.resid)) %>%
+              mutate(p.value = sapply(p.value, round_p)) %>% 
+              flextable() %>%
+              set_table_properties(layout = "autofit") %>%
+              set_header_labels(statistic = "Statistic", p.value = "p-value", method = "Method") %>%
+              colformat_double(digits = dig))
+  
+  # Process and store homoscedasticity test
+  assign_df(paste0("R_homoscedasticity_raw_df_", i), tidy(bptest(model)) %>%
+              mutate(Model = i, paper_ID = paper_ID, origin = "Reproduced"))
+  
+  assign_df(paste0("R_homoscedasticity_flextable_", i), tidy(bptest(model)) %>%
+              mutate(p.value = sapply(p.value, round_p)) %>%
+              mutate(across(c(parameter), ~ Sround(.x, 0))) %>% 
+              flextable() %>%
+              set_table_properties(layout = "autofit") %>%
+              set_header_labels(statistic = "Statistic", p.value = "p-value", method = "Method", parameter = "Parameter") %>%
+              colformat_double(digits = dig))
+  
+  
+   # Compute influence measures and store in a dataframe
+influence_measures <- data.frame(influence.measures(model)$infmat) %>%
+  rownames_to_column("ID") %>%
+  dplyr::select(-cook.d, -hat) %>% 
+  mutate(across(-ID, ~ round(.x, 3)))
+
+
+# Assign dataframe dynamically
+assign_df(paste0("R_influence_measures_raw_df_", i), influence_measures)
+
+# Compute descriptive statistics for influence measures
+influence_summary <- as.data.frame(describe(influence_measures[-1])) %>%   rownames_to_column("term") %>% 
+  select(term, n, mean, sd, median, min, max, skew, kurtosis) 
+
+
+# Cook's Distance plot
+cooks_threshold <- ols_plot_cooksd_chart_custom(model, print_plot = TRUE)
+ggsave(
+  filename = paste0("figures/cooks_threshold_", i, ".png"),
+  plot = cooks_threshold,
+  width = 8, height = 6, dpi = 300
+)
+
+# DFFITS plot
+dffit_threshold <- ols_plot_dffits_custom(model, print_plot = TRUE)
+ggsave(
+  filename = paste0("figures/dffit_threshold_", i, ".png"),
+  plot = dffit_threshold,
+  width = 8, height = 6, dpi = 300
+)
+
+
+# Get the combined plot
+dbetas_threshold <- ols_plot_dfbetas_fixed_y(model, print_plot = TRUE, fixed_ylim = TRUE)
+  ggsave(
+    filename = paste0("figures/dbetas_threshold_", i, ".png"),
+    plot = dbetas_threshold,
+    width = 10, height = 10, dpi = 300
+  )
+  
+  # Assign the object with a dynamic name
+  assign(paste0("dbetas_threshold_", i), dbetas_threshold)
+
+ 
+ 
+  
+   # Process and store description of residuals
+  assign_df(paste0("R_description_flextable_", i), as.data.frame(describe(augment(model))) %>% 
+              rownames_to_column("term") %>%
+              mutate(term = if_else(term == ".hat", ".leverage", term)) %>%
+              filter(term != ".rownames*") %>% 
+              mutate(term = ifelse(row_number() == 1, custom_y_name, term)) %>%  # Replace the first value of 'term'
+              mutate(across(c(n), ~ Sround(.x, 0))) %>%
+              dplyr::select(term, n, mean, sd, median, min, max, skew, kurtosis) %>% 
+              rbind(influence_summary) %>% 
+              flextable() %>%
+              set_table_properties(layout = "autofit") %>%
+              set_header_labels(term = "Term", n = "N", mean = "Mean", sd = "SD", median = "Median", min = "Min", 
+                                max = "Max", skew = "Skewness", kurtosis = "Kurtosis") %>%
+              add_footer_lines("* categorical variable") %>%
+              colformat_double(digits = dig))
+  
+  # Process and independence test
+  assign_df(paste0("R_independence_raw_df_", i), M$models[[1]]$assump$durbin$asDF %>% 
+              mutate(Model = i, paper_ID = paper_ID, origin = "Reproduced"))
+  
+  # Process and store independence test
+  assign_df(paste0("R_independence_flextable_", i), M$models[[1]]$assump$durbin$asDF %>%
+              rename("Statistic" = "dw", "AutoCorrelation" = "autoCor") %>%
+              mutate(p = sapply(p, round_p)) %>%
+              flextable() %>%
+              set_table_properties(layout = "autofit") %>%
+              set_header_labels(p = "p-value") %>%
+              colformat_double(digits = dig))
+  
+  # Scatter plot with smoothers for each predictor
+  scatter_plots <- lapply(predictors, function(predictor) {
+    ggplot(dat, aes_string(x = predictor, y = dependent_var)) +
+      geom_point(color = "black", size = 2.5) +  # Adjust the size as needed
+      geom_smooth(method = "lm", color = "blue", se = FALSE) +
+      geom_smooth(method = "gam", color = "red", se = FALSE) +
+      labs(x = predictor, y = custom_y_name) +
+      theme_bw()+
+      theme(
+        axis.title = element_text(size = 18),  # Adjust the size as needed
+        axis.text = element_text(size = 18)    # Adjust the size as needed
+      )
+  })
+  
+  # Arrange the scatter plots in a grid
+  grid_plot <- do.call("grid.arrange", c(scatter_plots, ncol = 2))
+  
+  # Save the grid plot to a file
+  ggsave(paste0("figures/scatter_plot_", i, ".png"), plot = grid_plot, width = 16, height = final_height1)
+  dev.off() # Close the graphical device to prevent plotting in the output
+  
+  
+
+  
+ 
+  # Save Cook's distance plot
+  cooks_plot <- influencePlot(model, xlab = "Leverage", ylab = "Studentized Residuals") %>%
+    rownames_to_column("ID") %>%
+    rename("Leverage" = "Hat") %>%
+    arrange(CookD) %>% 
+    left_join(influence_measures, by = "ID") %>%
+    flextable() %>%
+    add_footer_lines("StudRes = studentized residuals; CookD = Cook's Distance a combined measure of leverage and influence. DFBETAS (dfb.*) measures how much a specific regression coefficient changes (in standard errors) when an observation is removed; DFFITS measures how much the fitted (predicted) value for an observation changes (in standard deviations) when that observation is removed; cov.r = coefficient covariance ratio which measures how much the overall variance (precision) of the coefficients changes when that observation is removed.") %>%
+      colformat_double(digits = 3)
+  
+  # Create flextable distance plot
+  assign_df(paste0("R_cooks_distance_flextable_", i), cooks_plot)
+  
+  # Save the Cook's distance plot to a PNG file
+  png(filename = paste0("figures/cooks_plots_", i, ".png"), width = 1600, height = 1600, res = 300)
+  influencePlot(model, xlab = "Leverage", ylab = "Studentized Residuals")
+  dev.off() # Close the graphical device to prevent plotting in the output
+  
+  # Process and store collinearity diagnostics
+  assign_df(paste0("R_collinearity_raw_df_", i), M$models[[1]]$assump$collin$asDF %>% 
+              add_row(.before = 1) %>% mutate(Model = i, paper_ID = paper_ID, origin = "Reproduced") %>%
+              slice(2:nrow(M$models[[1]]$anova$asDF)))
+  
+  # Create flextable collinearity diagnostics
+  assign_df(paste0("R_collinearity_flextable_", i), M$models[[1]]$assump$collin$asDF %>%
+              flextable() %>%
+              set_table_properties(layout = "autofit") %>%
+              set_header_labels(vif = "VIF", tol = "Tolerance", term = "Term") %>%
+              add_footer_lines("VIF = Variance Inflation Factor.") %>%
+              colformat_double(digits = dig))
+  
+ # Save QQ plot using the car package
+png(filename = paste0("figures/qq_plot_", i, ".png"), width = 800, height = 800, res = 100)
+
+# Generate the QQ plot using car::qqPlot
+qqPlot(
+  model,
+  distribution = "norm",  # Use "norm" for normality
+  id = FALSE,             # Turn off labeling of extreme points
+  main = "QQ Plot with 95% CI (Normal Distribution)"
+)
+
+dev.off()
+
+# Save COVratio plot 
+png(filename = paste0("figures/covratio_plot_", i, ".png"), width = 800, height = 800, res = 100)
+plot_covratio(model)
+
+dev.off()
+  
+  
+ # Save the component-plus-residual plots to a PNG file with higher resolution and adjusted dimensions
+  png(filename = paste0("figures/res_plot_", i, ".png"), width = 2000, height = final_height, res = 300)
+  resplot <- car::residualPlots(model, layout = c(ceiling(nrow(M$models[[1]]$anova$asDF)/2), 2), type = "rstandard", ylab = "standardized residuals", col = "black", pch = 16, cex = 0.6, ylim = range(pmin(-3, rstandard(model)), pmax(3, rstandard(model)))) 
+  dev.off()
+  
+  # Initialize ResPlot
+  ResPlot <- as.data.frame(resplot)
+  
+  # Check if ResPlot has the expected columns and more than one row
+  if(nrow(ResPlot) > 1 && all(c("Pr(>|Test stat|)", "Test stat") %in% names(ResPlot))) {
+    ResPlot <- ResPlot %>% 
+      mutate(n = c(2:nrow(.), 1), Model = i, paper_ID = paper_ID, origin = "Reproduced") %>% 
+      rename("p.value" = "Pr(>|Test stat|)", "Statistic" = "Test stat") %>% 
+      rownames_to_column("term") %>% 
+      mutate(Results = ifelse(p.value < 0.05, "Linearity violation", "No linearity violation"))
+  } else {
+    # Handle the case where no proper lack-of-fit test is available
+    ResPlot <- data.frame(term = "No possible lack-of-fit tests",
+                          n = NA, Model = i, paper_ID = paper_ID, 
+                          origin = "Reproduced", p.value = NA, 
+                          Statistic = NA, Results = NA)
+  }
+  
+  # Assign the residuals data frame to a dynamically named object
+  assign_df(paste0("R_residuals_raw_df_", i), ResPlot)
+  
+  # Generate the flextable based on the ResPlot data
+  ResPlotflex <- ResPlot %>% 
+    select(-Model, -n, -paper_ID, -origin) %>% 
+    mutate(p.value = sapply(p.value, round_p)) %>%
+    flextable() %>% 
+    set_header_labels(term = "Term", p.value = "p-value") %>%
+    autofit() %>% 
+    add_footer_lines("Specification test for predictors using quadratic tests, for fitted values curvature is tested through Tukey's one-degree-of-freedom test for nonadditivity.") %>%
+      colformat_double(digits = 3)
+  
+  # Assign the flextable to a dynamically named object
+  assign_df(paste0("R_residuals_flextable_", i), ResPlotflex)
+  
+  # Generate visreg plots for the current model
+  visreg_plots <- generate_visreg_plots(model, predictors, dependent_var, custom_y_name, i)
+  
+  if (length(visreg_plots) > 0) {
+    # Arrange the plots in a grid if there are any valid plots
+    reg_plot <- do.call("grid.arrange", c(visreg_plots, ncol = 2))
+    
+    # Save the grid plot to a file
+    ggsave(paste0("figures/reg_plot_", i, ".png"), plot = reg_plot, width = 20, height = final_height1)
+  } else {
+    message("No valid visreg plots generated for model ", model_name)
+  }
+  
+  
+}
+
+
+
+
+```
+
+```{r}
+
+# Function to dynamically assign data frames to the global environment
+assign_df <- function(name, df) {
+  assign(name, df, envir = .GlobalEnv)
+}
+
+# Define the predictors globally
+term1 <- R_coefficients_raw_df_1$term
+term2 <- R_coefficients_raw_df_2$term
+
+
+
+# List of predictors for each model
+predictor_sets <- list(predictors1, predictors2)
+term_sets <- list(term1,term2)
+
+# List of coefficients, fit statistics, and ANOVA data for original models
+original_coefs <- list(
+  
+  data.frame(term = c(term1),
+             est = c(NA, "0.02", NA, NA),
+             se = c(NA, NA, NA, NA),
+             lower = c(NA, "0.01", NA, NA),
+             upper = c(NA, "0.03", NA, NA),
+             t = c(NA, NA, NA, NA),
+             p = c(NA,"<0.05", NA, NA),
+             stdEst = c(NA, NA, NA, NA), 
+             stdEstLower = c(NA, NA, NA, NA), 
+             stdEstUpper = c(NA, NA, NA, NA)),
+  
+    data.frame(term = c(term2),
+             est = c(NA, "0.02", "0.02", "-0.02", NA, "-0.36", NA, "0.56", "0.63",  "0.02", NA, "0.31", NA,  "0.57", NA, "0.38", "0.41", NA, "-0.12", "-0.01"),
+             se = c(NA, "0.01", "0.02", "0.01", NA, "0.17", NA, "0.16", "0.17", "0.03", NA, "0.22",NA, "0.18", NA, "0.16", "0.17", NA, "0.14", "0.01"),
+             lower = c(NA, "0.01", "-0.01", "-0.05", NA, "-0.70", NA, "0.25", "0.30", "-0.03", NA, "-0.13", NA, "0.22", NA, "0.06", "0.08", NA, "-0.40", "-0.02"),
+             upper = c(NA, "0.03", "0.06", "0.01", NA, "-0.02", NA, "0.88", "0.96","0.08",  NA,  "0.74", NA, "0.93", NA, "0.70", "0.75", NA, "0.15", "0.01"),
+             t = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
+             p = c(NA, "<0.05", "0.23", "0.12", NA, "0.04", NA, "<0.05", "<0.05", "0.36", NA, "0.17", NA, "<0.05", NA, "0.02", "0.02", NA, "0.39", "0.30"),
+             stdEst = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA), 
+             stdEstLower = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA), 
+             stdEstUpper = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)))
+    
+    
+
+original_fit_stats <- list(
+    data.frame(r = NA, r2 = NA, r2Adj = NA, aic = NA, rmse = NA, f = NA, df1 = NA, df2 = NA, p = NA),
+    data.frame(r = NA, r2 = NA, r2Adj = NA, aic = NA, rmse = NA, f = NA, df1 = NA, df2 = NA, p = NA)
+)
+
+original_anova <- list(
+  data.frame(term = c(predictors1, "Residuals"),
+             ss = c(NA, NA, NA, NA),
+             df = c(NA, NA, NA, NA),
+             ms = c(NA, NA, NA, NA),
+             F = c(NA, NA, NA, NA),
+             p = c(NA, NA, NA, NA)),
+  
+    data.frame(term = c(predictors2, "Residuals"),
+             ss = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
+             df = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
+             ms = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
+             F = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
+             p = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)))
+
+
+# Function to format coefficients data
+format_coefs <- function(coefs_df, model_num, type) {
+  coefs_df <- coefs_df %>% mutate(Model = model_num, paper_ID = paper_ID, origin = type, n = 1:nrow(coefs_df))
+  coefs_df %>%
+    dplyr::select(term, est, se, lower, upper, t, p) %>%  
+     flextable() %>%
+    set_table_properties(layout = "autofit") %>%
+    set_header_labels(term = "Term", lower = "Lower", upper = "Upper", p = "p-value", est = "B", se = "SE", t = "t") %>%
+    add_footer_lines("SE = Standard error; Lower = lower confidence interval; Upper = upper confidence interval.")
+}
+
+# Function to format fit statistics data
+format_fit_stats <- function(fit_stats_df, coef_df, model_num, type) {
+  terms <- coef_df %>% select(term, n) %>% distinct()
+  fit_stats_df <- fit_stats_df %>%
+    slice(rep(1, nrow(terms))) %>%
+    mutate(Model = model_num, paper_ID = paper_ID, origin = type) %>%
+    cbind(terms)
+  fit_stats_df %>%
+    slice(1) %>% 
+    dplyr::select(r, r2, r2Adj, aic, rmse, f, df1, df2, p) %>%
+    mutate(across(c(df1, df2), ~ Sround(.x, 0))) %>%
+    mutate(df1 = ifelse(df1=="NA", "", df1)) %>% 
+    mutate(df2 = ifelse(df2=="NA", "", df2)) %>% 
+    flextable() %>%
+    set_table_properties(layout = "autofit") %>%
+    set_header_labels(r = "R", r2 = "R2", r2Adj = "R2Adj", aic = "AIC", rmse = "RMSE", f = "F", p = "p-value", df1 = "DF1", df2 = "DF2") %>%
+    compose(i = 1, j = "r2", part = "header", value = as_paragraph("R", as_sup("2"))) %>%
+    compose(i = 1, j = "r2Adj", part = "header", value = as_paragraph("R", as_sup("2"), "Adj")) %>%
+   add_footer_lines(as_paragraph(
+    as_i("R"), as_sup("2"), " Adj = Adjusted ", as_i("R"), as_sup("2"), "; ",
+    "AIC = Akaike Information Criterion; RMSE = The Root Mean Squared Error; DF1 = Degrees of freedom for the model; DF2 = Degrees of freedom for the residuals."
+))
+}
+
+# Function to format ANOVA data
+format_anova <- function(anova_df, coef_df, model_num, type) {
+  anova_df <- anova_df %>% mutate(Model = model_num, paper_ID = paper_ID, origin = type, n = c(2:nrow(.), 1))
+  anova_df %>%
+    dplyr::select(-Model, -paper_ID, -origin, -n) %>%
+   # mutate(across(c(df), ~ Sround(.x, 0))) %>% 
+    mutate(df = ifelse(is.na(df), "", df)) %>%
+    flextable() %>%
+    set_table_properties(layout = "autofit") %>%
+    set_header_labels(term = "Term", ms = "MS", ss = "SS", p = "p-value", df = "DF") %>%
+    add_footer_lines("SS = Sum of Squares; DF = Degrees of freedom; MS = Mean Square.")
+}
+
+# Loop to handle original data
+for (i in seq_along(original_coefs)) {
+  # Format coefficients
+  O_coefficients_raw_df <- original_coefs[[i]] %>% mutate(Model = i, paper_ID = paper_ID, origin = "Original", n = 1:nrow(.))
+  assign_df(paste0("O_coefficients_raw_df_", i), O_coefficients_raw_df)
+  
+  O_coefficients_flextable <- format_coefs(original_coefs[[i]], i, "Original")
+  assign_df(paste0("O_coefficients_flextable_", i), O_coefficients_flextable)
+  
+  # Format fit statistics
+  O_fit_stats_raw_df <- original_fit_stats[[i]] %>%
+    slice(rep(1, nrow(O_coefficients_raw_df))) %>%
+    mutate(Model = i, paper_ID = paper_ID, origin = "Original") %>%
+    cbind(select(O_coefficients_raw_df, term, n))
+  assign_df(paste0("O_fit_stats_raw_df_", i), O_fit_stats_raw_df)
+  
+  O_fit_stats_flextable <- format_fit_stats(original_fit_stats[[i]], O_coefficients_raw_df, i, "Original")
+  assign_df(paste0("O_fit_stats_flextable_", i), O_fit_stats_flextable)
+  
+  # Format ANOVA table
+  O_anova_raw_df <- original_anova[[i]] %>% mutate(Model = i, paper_ID = paper_ID, origin = "Original", n = c(2:nrow(.), 1))
+  assign_df(paste0("O_anova_raw_df_", i), O_anova_raw_df)
+  
+  O_anova_flextable <- format_anova(original_anova[[i]], O_coefficients_raw_df, i, "Original")
+  assign_df(paste0("O_anova_flextable_", i), O_anova_flextable)
+}
+
+
+
+
+```
+
+```{r}
+# Function to dynamically assign data frames to the global environment
+assign_df <- function(name, df) {
+  assign(name, df, envir = .GlobalEnv)
+}
+
+# Function to bind rows, rename columns, and select specific columns
+bind_and_rename <- function(models_list, prefix, exclude_cols) {
+  df <- bind_rows(models_list)
+  
+  # Ensure exclude columns exist before renaming
+  existing_cols <- intersect(colnames(df), exclude_cols)
+  
+  df <- df %>%
+    rename_with(~ paste0(prefix, .), -all_of(existing_cols)) %>%
+    dplyr::select(-matches(paste0(prefix, "origin")))
+  
+  return(df)
+}
+
+# Automatically gather original and reproduced coefficients data frames
+origCoef_dfs <- mget(paste0("O_coefficients_raw_df_", seq_len(num_models)))
+repCoef_dfs <- mget(paste0("R_coefficients_raw_df_", seq_len(num_models)))
+
+# Bind and rename coefficients
+origCoef <- bind_and_rename(origCoef_dfs, "O_", c("Model", "paper_ID", "n", "term"))
+repCoef <- bind_and_rename(repCoef_dfs, "R_", c("Model", "paper_ID", "n", "term"))
+
+# Automatically gather original and reproduced fit statistics data frames
+origfit_dfs <- mget(paste0("O_fit_stats_raw_df_", seq_len(num_models)))
+repfit_dfs <- mget(paste0("R_fit_stats_raw_df_", seq_len(num_models)))
+
+# Bind and rename fit statistics
+origfit <- bind_and_rename(origfit_dfs, "O_", c("Model", "paper_ID", "n", "term"))
+repfit <- bind_and_rename(repfit_dfs, "R_", c("Model", "paper_ID", "n", "term"))
+
+# Merge coefficients
+df_list <- list(origCoef, repCoef)
+C <- df_list %>% reduce(full_join, by = c("Model", "paper_ID", "n", "term"))
+
+# Calculate changes and categorize them
+C <- C %>%
+   mutate(
+    O_estN = as.numeric(O_est),
+     O_tN = as.numeric(O_t),
+    O_lowerN = as.numeric(O_lower),
+    O_upperN = as.numeric(O_upper),
+     O_seN=  as.numeric( O_se),
+     R_seN = R_se, 
+    R_se = as.character(R_se),
+    O_pN = as.numeric(O_p),
+    O_pN = ifelse(O_p == "<0.05", 0.049, as.numeric(O_p)),
+    R_estN =  R_est,
+    R_tN =  R_t,
+    R_lowerN = R_lower,
+    R_upperN = R_upper,
+    R_pN = R_p,
+    R_est = as.character(R_est),
+    R_t = as.character(R_t),
+    R_lower = as.character(R_lower),
+    R_upper = as.character( R_upper),
+    R_p = as.character(R_p),
+        changeB = R_estN - O_estN,
+    change.t = R_tN - O_tN,
+    change.lci = R_lowerN - O_lowerN,
+    change.uci = R_upperN - O_upperN,
+    change.se = R_seN -O_seN, 
+    R_pN = if_else(R_pN < 0.05, 0.049, R_pN),
+    changep = R_pN - O_pN,
+        SigChange = case_when(
+      O_pN < 0.05 & R_pN < 0.05 ~ "Remains significant",
+      O_pN >= 0.05 & R_pN >= 0.05 ~ "Remains non-sig",
+      O_pN < 0.05 & R_pN >= 0.05 ~ "Change from sig to non-sig",
+      O_pN >= 0.05 & R_pN < 0.05 ~ "Change from non-sig to sig"),
+    SigChangeDirection = case_when(
+      O_pN < 0.05 & R_pN < 0.05 & (sign(O_estN) != sign(R_estN)) ~ "Remains sig, B changes direction",
+      O_pN < 0.05 & R_pN < 0.05 & (sign(O_estN) == sign(R_estN)) ~ "Remains sig, B same direction",
+      O_pN >= 0.05 & R_pN < 0.05 & (sign(O_estN) == sign(R_estN) | sign(O_estN) != sign(R_estN)) ~ "Non-sig to sig, B same direction",
+      O_pN < 0.05 & R_pN >= 0.05 & (sign(O_estN) != sign(R_estN) | sign(O_estN) == sign(R_estN)) ~ "Sig to non-sig, B changes direction",
+      O_pN >= 0.05 & R_pN >= 0.05 & (sign(O_estN) != sign(R_estN)) ~ "Remains non-sig, B changes direction",
+      O_pN >= 0.05 & R_pN >= 0.05 & (sign(O_estN) == sign(R_estN)) ~ "Remains non-sig, B same direction",
+      TRUE ~ NA_character_))
+
+
+# Merge fit statistics
+df_list2 <- list(origfit, repfit)
+F <- df_list2 %>% reduce(full_join, by = c("Model", "paper_ID", "n", "term"))
+
+# Calculate changes and categorize them
+F <- F %>%
+    mutate(
+    O_r2N = as.numeric(O_r2),
+     O_r2AdjN = as.numeric(O_r2Adj),
+     O_fN = as.numeric(O_f),
+    O_pN = as.numeric(O_p),
+    O_pN = ifelse(O_p == "<0.05", 0.049, as.numeric(O_p)),
+    R_r2N =R_r2,
+    R_r2AdjN =R_r2Adj,
+    R_fN = R_f,
+    R_pN = R_p,
+    R_r2 = as.character(R_r2),
+    R_r2Adj = as.character(R_r2Adj),
+    R_f = as.character(R_f),
+    R_p = as.character(R_p),
+    changeR2 = R_r2N - O_r2N,
+    changeR2Adj = R_r2AdjN - O_r2AdjN,
+    Change.f = R_fN - O_fN,
+    Change.df1 = R_df1 - O_df1,
+    Change.df2 = R_df2 - O_df2,
+    Reproduce.df1 = case_when(
+      Change.df1 == 0 ~ "Reproduced",
+      Change.df1 < 0 | Change.df1 > 0 ~ "Not Reproduced",
+      TRUE ~ NA_character_),
+    Reproduce.df2 = case_when(
+      Change.df2 == 0 ~ "Reproduced",
+      Change.df2 < 0 | Change.df2 > 0 ~ "Not Reproduced",
+      TRUE ~ NA_character_))
+
+
+# Automatically gather original and reproduced ANOVA data frames
+origANOVA_dfs <- mget(paste0("O_anova_raw_df_", seq_len(num_models)))
+repANOVA_dfs <- mget(paste0("R_anova_raw_df_", seq_len(num_models)))
+
+# Bind and rename ANOVA statistics
+origANOVA <- bind_and_rename(origANOVA_dfs, "O_", c("Model", "paper_ID", "n", "term")) %>%
+  mutate(term = ifelse(term == "Residuals", "Intercept", term))
+
+repANOVA <- bind_and_rename(repANOVA_dfs, "R_", c("Model", "paper_ID", "n", "term")) %>%
+  mutate(term = ifelse(term == "Residuals", "Intercept", term))
+
+# Merge ANOVA statistics
+df_list3 <- list(origANOVA, repANOVA)
+G <- df_list3 %>% reduce(full_join, by = c("Model", "paper_ID", "n", "term"))
+G <- G %>%
+    mutate( O_pN = as.numeric(O_p),
+             R_pN = R_p,
+              R_p = as.character(R_p),
+            R_p = as.character(R_p))
+
+# Rename p-values for consistency
+CX <- C %>% rename("O_p.value" = "O_p", "R_p.value" = "R_p", "O_p.valueN" = "O_pN", "R_p.valueN" = "R_pN")
+FX <- F %>% rename("O_p_value" = "O_p", "R_p_value" = "R_p", "O_p_valueN" = "O_pN", "R_p_valueN" = "R_pN")
+GX <- G %>% rename("O_pvalue" = "O_p", "R_pvalue" = "R_p", "O_pvalueN" = "O_pN", "R_pvalueN" = "R_pN")
+df_list30 <- list(CX, FX)
+fdat <- df_list30%>% reduce(full_join, by = c("Model", "paper_ID", "n", "term"))
+
+
+
+decimal_places <- function(x) {
+  if (is.na(x)) {
+    return(NA)
+  }
+  # Ensure x is treated as a string and count the decimals even if the value is 0.000
+  x_str <- as.character(x)
+  
+  if (grepl("\\.", x_str)) {
+    # Count characters after the decimal point
+    return(nchar(strsplit(x_str, ".", fixed = TRUE)[[1]][[2]]))
+  } else {
+    return(0)  # If there's no decimal point, return 0
+  }
+}
+
+# Function to compare absolute difference to rounding error with three categories
+compare_diff_to_rounding_error <- function(original_num, reproduced_num, dec_places) {
+  if (is.na(original_num) || is.na(reproduced_num) || is.na(dec_places)) {
+    return(list(category = NA, rounding_error_threshold_1 = NA, rounding_error_threshold_2 = NA))
+  }
+  
+  rounding_error_threshold_1 <- 0.50 * 10^(-dec_places)
+  rounding_error_threshold_2 <- 0.999 * 10^(-dec_places)
+  absolute_diff <- abs(original_num - reproduced_num)
+  
+  category <- if (absolute_diff <= rounding_error_threshold_1) {
+    "Reproduced"
+  } else if (absolute_diff > rounding_error_threshold_1 && absolute_diff <= rounding_error_threshold_2) {
+    "Incorrect Rounding"
+  } else {
+    "Not Reproduced"
+  }
+  
+  return(list(category = category, rounding_error_threshold_1 = rounding_error_threshold_1, rounding_error_threshold_2 = rounding_error_threshold_2))
+}
+
+# List of comparisons to perform
+comparisons <- list(
+  list(o_col_cat = "O_est", o_col_num = "O_estN", r_col = "R_estN"),
+  list(o_col_cat = "O_lower", o_col_num = "O_lowerN", r_col = "R_lowerN"), 
+  list(o_col_cat = "O_upper", o_col_num = "O_upperN", r_col = "R_upperN"),
+  list(o_col_cat = "O_se", o_col_num = "O_seN", r_col = "R_seN"),
+  list(o_col_cat = "O_t", o_col_num = "O_tN", r_col = "R_tN"),
+  list(o_col_cat = "O_p.value", o_col_num = "O_p.valueN", r_col = "R_p.valueN"),
+  list(o_col_cat = "O_r2", o_col_num = "O_r2N", r_col = "R_r2N"),
+  list(o_col_cat = "O_r2Adj", o_col_num = "O_r2AdjN", r_col = "R_r2AdjN"),
+  list(o_col_cat = "O_f", o_col_num = "O_fN", r_col = "R_fN")
+)
+
+# Applying the comparisons
+for (comp in comparisons) {
+  o_col_cat <- comp$o_col_cat
+  o_col_num <- comp$o_col_num
+  r_col <- comp$r_col
+  
+  # Create dynamic column names
+  category_col <- paste0("category_", o_col_cat)
+  threshold_1_col <- paste0("rounding_error_threshold_1_", o_col_cat)
+  threshold_2_col <- paste0("rounding_error_threshold_2_", o_col_cat)
+  
+  # Apply the function and unnest the result
+  fdat <- fdat %>%
+    rowwise() %>%
+    mutate(dec_places = decimal_places(!!sym(o_col_cat))) %>%
+    mutate(result = list(compare_diff_to_rounding_error(!!sym(o_col_num), !!sym(r_col), dec_places))) %>%
+    unnest_wider(result, names_sep = paste0("_", o_col_cat, "_")) %>%
+    ungroup() %>%
+    select(-dec_places)
+}
+
+
+
+# Reshape est
+est_long <- fdat %>%
+  select(paper_ID, Model, term, n, changeB, change.lci, change.uci,change.se, changep, SigChange, SigChangeDirection,
+         changeR2,Change.f, Change.df1, Change.df2, Reproduce.df1, Reproduce.df2,
+          result_O_est_category, result_O_est_rounding_error_threshold_1, result_O_est_rounding_error_threshold_2,
+          result_O_lower_category, result_O_lower_rounding_error_threshold_1, result_O_lower_rounding_error_threshold_2, 
+          result_O_upper_category, result_O_upper_rounding_error_threshold_1, result_O_upper_rounding_error_threshold_2,
+         result_O_se_category, result_O_se_rounding_error_threshold_1, result_O_se_rounding_error_threshold_2,
+         result_O_t_category, result_O_t_rounding_error_threshold_1, result_O_t_rounding_error_threshold_2,
+          result_O_r2_category, result_O_r2_rounding_error_threshold_1, result_O_r2_rounding_error_threshold_2,
+         result_O_r2Adj_category, result_O_r2Adj_rounding_error_threshold_1, result_O_r2Adj_rounding_error_threshold_2,
+          result_O_f_category, result_O_f_rounding_error_threshold_1, result_O_f_rounding_error_threshold_2,
+           O_est, R_est) %>%
+  pivot_longer(
+    cols = c(O_est, R_est),
+    names_to = 'Source',
+    values_to = 'est'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_est", "Original", "Reproduced"))
+
+estN_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_estN, R_estN) %>%
+  pivot_longer(
+    cols = c(O_estN, R_estN),
+    names_to = 'Source',
+    values_to = 'estN'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_estN", "Original", "Reproduced"))
+
+
+# Reshape lower
+lower_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_lower, R_lower) %>%
+  pivot_longer(
+    cols = c(O_lower, R_lower),
+    names_to = 'Source',
+    values_to = 'lower'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_lower", "Original", "Reproduced"))
+
+# Reshape lowerN
+lowerN_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_lowerN, R_lowerN) %>%
+  pivot_longer(
+    cols = c(O_lowerN, R_lowerN),
+    names_to = 'Source',
+    values_to = 'lowerN'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_lowerN", "Original", "Reproduced"))
+
+# Reshape upper
+upper_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_upper, R_upper) %>%
+  pivot_longer(
+    cols = c(O_upper, R_upper),
+    names_to = 'Source',
+    values_to = 'upper'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_upper", "Original", "Reproduced"))
+
+# Reshape upperN
+upperN_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_upperN, R_upperN) %>%
+  pivot_longer(
+    cols = c(O_upperN, R_upperN),
+    names_to = 'Source',
+    values_to = 'upperN'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_upperN", "Original", "Reproduced"))
+
+
+# Reshape se
+se_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_se, R_se) %>%
+  pivot_longer(
+    cols = c(O_se, R_se),
+    names_to = 'Source',
+    values_to = 'se'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_se", "Original", "Reproduced"))
+
+# Reshape se
+seN_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_seN, R_seN) %>%
+  pivot_longer(
+    cols = c(O_seN, R_seN),
+    names_to = 'Source',
+    values_to = 'seN'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_seN", "Original", "Reproduced"))
+
+
+# Reshape t
+t_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_t, R_t) %>%
+  pivot_longer(
+    cols = c(O_t, R_t),
+    names_to = 'Source',
+    values_to = 't'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_t", "Original", "Reproduced"))
+
+# Reshape t
+tN_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_tN, R_tN) %>%
+  pivot_longer(
+    cols = c(O_tN, R_tN),
+    names_to = 'Source',
+    values_to = 'tN'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_tN", "Original", "Reproduced"))
+
+# Reshape stdEst
+stdEst_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_stdEst, R_stdEst) %>%
+  pivot_longer(
+    cols = c(O_stdEst, R_stdEst),
+    names_to = 'Source',
+    values_to = 'stdEst'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_stdEst", "Original", "Reproduced"))
+
+# Reshape stdEstLower
+stdEstLower_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_stdEstLower, R_stdEstLower) %>%
+  pivot_longer(
+    cols = c(O_stdEstLower, R_stdEstLower),
+    names_to = 'Source',
+    values_to = 'stdEstLower'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_stdEstLower", "Original", "Reproduced"))
+
+# Reshape stdEstUpper
+stdEstUpper_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_stdEstUpper, R_stdEstUpper) %>%
+  pivot_longer(
+    cols = c(O_stdEstUpper, R_stdEstUpper),
+    names_to = 'Source',
+    values_to = 'stdEstUpper'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_stdEstUpper", "Original", "Reproduced"))
+
+# Reshape r
+r_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_r, R_r) %>%
+  pivot_longer(
+    cols = c(O_r, R_r),
+    names_to = 'Source',
+    values_to = 'r'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_r", "Original", "Reproduced"))
+
+# make numeric
+fdat$R_r2<-as.numeric(fdat$R_r2)
+
+# Reshape r2
+r2_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_r2, R_r2) %>%
+  pivot_longer(
+    cols = c(O_r2, R_r2),
+    names_to = 'Source',
+    values_to = 'r2'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_r2", "Original", "Reproduced"))
+
+
+# Reshape r2Adj
+r2Adj_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_r2Adj, R_r2Adj) %>%
+  pivot_longer(
+    cols = c(O_r2Adj, R_r2Adj),
+    names_to = 'Source',
+    values_to = 'r2Adj'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_r2Adj", "Original", "Reproduced"))
+
+# Reshape r2Adj
+r2AdjN_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_r2AdjN, R_r2AdjN) %>%
+  pivot_longer(
+    cols = c(O_r2AdjN, R_r2AdjN),
+    names_to = 'Source',
+    values_to = 'r2AdjN'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_r2AdjN", "Original", "Reproduced"))
+
+
+# Reshape aic
+aic_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_aic, R_aic) %>%
+  pivot_longer(
+    cols = c(O_aic, R_aic),
+    names_to = 'Source',
+    values_to = 'aic'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_aic", "Original", "Reproduced"))
+
+# Reshape rmse
+rmse_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_rmse, R_rmse) %>%
+  pivot_longer(
+    cols = c(O_rmse, R_rmse),
+    names_to = 'Source',
+    values_to = 'rmse'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_rmse", "Original", "Reproduced"))
+
+# Reshape f
+f_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_f, R_f) %>%
+  pivot_longer(
+    cols = c(O_f, R_f),
+    names_to = 'Source',
+    values_to = 'f'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_f", "Original", "Reproduced"))
+
+# Reshape df1
+df1_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_df1, R_df1) %>%
+  pivot_longer(
+    cols = c(O_df1, R_df1),
+    names_to = 'Source',
+    values_to = 'df1'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_df1", "Original", "Reproduced"))
+
+
+# Reshape df2
+df2_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_df2, R_df2) %>%
+  pivot_longer(
+    cols = c(O_df2, R_df2),
+    names_to = 'Source',
+    values_to = 'df2'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_df2", "Original", "Reproduced"))
+
+
+# Reshape p.value
+p.value_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_p.value, R_p.value) %>%
+  pivot_longer(
+    cols = c(O_p.value, R_p.value),
+    names_to = 'Source',
+    values_to = 'p.value'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_p.value", "Original", "Reproduced"))
+
+# Reshape p.value
+p.valueN_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_p.valueN, R_p.valueN) %>%
+  pivot_longer(
+    cols = c(O_p.valueN, R_p.valueN),
+    names_to = 'Source',
+    values_to = 'p.valueN'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_p.valueN", "Original", "Reproduced"))
+
+
+# Reshape p_value
+p_value_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_p_value, R_p_value) %>%
+  pivot_longer(
+    cols = c(O_p_value, R_p_value),
+    names_to = 'Source',
+    values_to = 'p_value'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_p_value", "Original", "Reproduced"))
+
+# Reshape p_value
+p_valueN_long <- fdat %>%
+  select(paper_ID, Model, term, n, O_p_valueN, R_p_valueN) %>%
+  pivot_longer(
+    cols = c(O_p_valueN, R_p_valueN),
+    names_to = 'Source',
+    values_to = 'p_valueN'
+  ) %>%
+  mutate(Source = ifelse(Source == "O_p_valueN", "Original", "Reproduced"))
+
+
+# Initialize the final dataset with est_long
+ffdat <- est_long
+
+
+# Merge each reshaped dataset one by one
+ffdat <- ffdat %>%
+  full_join(estN_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(lower_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(lowerN_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(upper_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(upperN_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(se_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(seN_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(t_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(tN_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(stdEst_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(stdEstLower_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(stdEstUpper_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(r_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>%  
+  full_join(r2_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(r2Adj_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(r2AdjN_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(aic_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(rmse_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(f_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(df1_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+  full_join(df2_long,by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+ 
+  
+ 
+ full_join(p_value_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+ full_join(p_valueN_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+
+ full_join(p.value_long, by = c("paper_ID", "Model", "term", "n", "Source")) %>% 
+ full_join(p.valueN_long, by = c("paper_ID", "Model", "term", "n", "Source")) 
+
+
+
+
+
+# Assign final datasets to the global environment
+assign_df("origCoef", origCoef)
+assign_df("repCoef", repCoef)
+assign_df("fit_orig", origfit)
+assign_df("fit_rep", repfit)
+assign_df("anova_orig", origANOVA)
+assign_df("anova_rep", repANOVA)
+assign_df("fdat", fdat)
+assign_df("ffdat", ffdat)
+
+
+
+```
+
+```{r}
+# Function to dynamically assign data frames to the global environment
+assign_df <- function(name, df) {
+  assign(name, df, envir = .GlobalEnv)
+}
+
+# Function to dynamically fetch a data frame
+get_dynamic_df <- function(df_name) {
+  get(df_name, envir = .GlobalEnv)
+}
+
+# Get the unique model numbers
+model_numbers <- unique(fdat$Model)
+
+# Split the fdat data frame by Model and assign each subset to the global environment
+split_fdat <- split(fdat, fdat$Model)
+
+# Dynamically assign each split dataset to the global environment
+for (i in seq_along(model_numbers)) {
+  model_number <- model_numbers[i]
+  assign_df(paste0("fdat", model_number), split_fdat[[i]])
+}
+
+
+
+# Function to generate a forest plot
+generate_forest_plot <- function(model_num) {
+  original_data <- get_dynamic_df(paste0("O_coefficients_raw_df_", model_num)) %>%
+    dplyr::select(n, term, est, lower, upper) %>%
+    dplyr::mutate(Source = "Original") %>%
+    dplyr::mutate(est = as.numeric(est), lower = as.numeric(lower), upper = as.numeric(upper)) %>%
+    dplyr::mutate(Order = 0)  # Set Order to 0 for Original
+  
+  reproduced_data <- get_dynamic_df(paste0("R_coefficients_raw_df_", model_num)) %>%
+    dplyr::select(n, term, est, lower, upper) %>%
+    dplyr::mutate(Source = "Reproduced") %>%
+    dplyr::mutate(est = as.numeric(est), lower = as.numeric(lower), upper = as.numeric(upper)) %>%
+    dplyr::mutate(Order = 1)  # Set Order to 1 for Reproduced
+  
+  combined_data <- dplyr::bind_rows(original_data, reproduced_data) %>%
+    dplyr::filter(term != "Intercept") %>%
+    dplyr::mutate(OrderHelper = n + Order / 1000) %>%
+    dplyr::arrange(OrderHelper) %>%
+    dplyr::mutate(Label = paste(term, Source, sep = " - ")) %>%
+    dplyr::arrange(desc(OrderHelper))  # Reverse the order of the data
+  
+  # Set the factor levels based on reversed order
+  combined_data$Label <- factor(combined_data$Label, levels = combined_data$Label)
+  
+  
+  plot <- ggplot2::ggplot(combined_data, ggplot2::aes(x = est, y = Label)) +
+    ggplot2::geom_errorbar(ggplot2::aes(xmin = lower, xmax = upper, color = Source), width = 0.2) +
+    ggplot2::geom_point(ggplot2::aes(color = Source), size = 3) +
+    ggplot2::scale_color_manual(values = c("Original" = "darkblue", "Reproduced" = "darkred")) +
+    ggplot2::labs(x = "Coefficient", y = "") +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(
+      panel.grid.minor = element_blank(),
+      panel.background = element_blank(),
+      plot.background = ggplot2::element_rect(fill = "white", color = NA),
+      legend.position = "top",
+      axis.line = ggplot2::element_line(color = "black")
+    )
+  
+  ggplot2::ggsave(paste0("figures/forest_plot_model_", model_num, ".png"), plot = plot)
+}
+
+
+# Function to generate Bland-Altman plot using blandr with error handling
+generate_bland_altman_plot <- function(fdat, model_num) {
+  tryCatch({
+    # Perform Bland-Altman analysis to get statistics
+    blandr_results <- blandr::blandr.statistics(
+      method1 = fdat$R_p.valueN,
+      method2 = fdat$O_p.valueN
+    )
+    
+    # Generate the Bland-Altman plot without default annotations
+    plot <- blandr::blandr.draw(
+      fdat$R_p.valueN, 
+      fdat$O_p.valueN, 
+      ciDisplay = FALSE, 
+      ciShading = FALSE,
+      plotTitle = paste("")
+    )
+    
+    # Add custom annotations with text above the lines, rounded to three decimals
+    plot <- plot +
+      ggplot2::geom_hline(yintercept = blandr_results$bias, color = "blue", linetype = "dashed") +
+      ggplot2::geom_hline(yintercept = blandr_results$upperLOA, color = "red", linetype = "dashed") +
+      ggplot2::geom_hline(yintercept = blandr_results$lowerLOA, color = "red", linetype = "dashed") +
+      ggplot2::annotate("text", x = max(fdat$R_p.valueN, na.rm = TRUE), y = blandr_results$bias + 0.01, 
+                        label = paste("Mean Bias:", Sround(blandr_results$bias, 3)), vjust = -0.5, hjust = 1) +
+      ggplot2::annotate("text", x = max(fdat$R_p.valueN, na.rm = TRUE), y = blandr_results$upperLOA + 0.01, 
+                        label = paste("Upper LoA:", Sround(blandr_results$upperLOA, 3)), vjust = -0.5, hjust = 1) +
+      ggplot2::annotate("text", x = max(fdat$R_p.valueN, na.rm = TRUE), y = blandr_results$lowerLOA + 0.01, 
+                        label = paste("Lower LoA:", Sround(blandr_results$lowerLOA, 3)), vjust = -0.5, hjust = 1) +
+      ggplot2::labs(
+        x = "Mean of Reproduced and Original",
+        y = "Difference (Reproduced - Original)"
+      ) +
+      ggplot2::theme_minimal() +
+      ggplot2::theme(
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        plot.background = ggplot2::element_rect(fill = "white", color = NA),
+        panel.border = ggplot2::element_rect(color = "black", fill = NA, size = 1),
+        axis.text = ggplot2::element_text(size = 12),
+        axis.title = ggplot2::element_text(size = 14),
+        plot.title = ggplot2::element_text(hjust = 0.5, size = 16)
+      )
+    
+    # Save the plot
+    ggplot2::ggsave(filename = paste0("figures/bland_altman_plot_model_", model_num, ".png"), plot = plot, width = 7.74, height = 5.47)
+  }, error = function(e) {
+    message(paste("Bland-Altman plot failed for model", model_num, ": ", e$message))
+  })
+}
+
+
+# Function to create and assign the CC table
+create_cc_table <- function(fdat, model_num) {
+  CC <- fdat %>%
+    dplyr::select(term, O_estN, R_estN, changeB, result_O_est_category) %>%
+    mutate(across(c(R_estN, changeB), ~ Sround(.x, thresround))) %>% 
+    mutate(changeB = ifelse(changeB=="NA", "", changeB)) %>% 
+     mutate(O_estN = ifelse(O_estN=="NA", "", O_estN)) %>%
+     mutate(R_estN = ifelse(R_estN=="NA", "", R_estN)) %>%
+    flextable::flextable() %>%
+    flextable::align(align = "left", part = "all") %>%
+    flextable::width(j = "result_O_est_category", width = 2.5) %>%
+    flextable::set_header_labels(O_estN = "O_B", R_estN = "R_B", changeB = "Change.B", result_O_est_category = "reproduce.B") %>%
+    flextable::add_footer_lines("O_B = original B; R_B = reproduced B; Change.B = change in R_B - O_B; Reproduce.B = B reproduced.")
+  
+  assign_df(paste0("CC_model_", model_num), CC)
+}
+
+# Function to create and assign the CL table
+create_cl_table <- function(fdat, model_num) {
+  CL <- fdat %>%
+    dplyr::select(term, O_lowerN, R_lowerN, change.lci, result_O_lower_category) %>%
+    mutate(across(c(R_lowerN, change.lci), ~ Sround(.x, thresround))) %>% 
+    mutate(change.lci = ifelse(change.lci=="NA", "", change.lci)) %>% 
+    mutate(R_lowerN = ifelse(R_lowerN=="NA", "", R_lowerN)) %>%
+    flextable::flextable() %>%
+    flextable::align(align = "left", part = "all") %>%
+    flextable::width(j = "result_O_lower_category", width = 2.5) %>%
+    flextable::set_header_labels(O_lowerN= "O_lower", R_lowerN= "R_lower",  change.lci = "Change.lci", result_O_lower_category = "Reproduce.lower") %>%
+    flextable::add_footer_lines("O_lower = original lower confidence interval; R_lower = reproduced lower confidence interval; change.lci = change in R_lower - O_lower; Reproduce.lower = lower confidence interval reproduced.")
+  
+  assign_df(paste0("CL_model_", model_num), CL)
+}
+
+# Function to create and assign the CU table
+create_cu_table <- function(fdat, model_num) {
+  CU <- fdat %>%
+    dplyr::select(term, O_upperN, R_upperN, change.uci, result_O_upper_category) %>%
+     mutate(across(c(R_upperN, change.uci), ~ Sround(.x, thresround))) %>% 
+     mutate(change.uci = ifelse(change.uci=="NA", "", change.uci)) %>% 
+    mutate(R_upperN = ifelse(R_upperN=="NA", "", R_upperN)) %>%
+    flextable::flextable() %>%
+    flextable::align(align = "left", part = "all") %>%
+    flextable::width(j = "result_O_upper_category", width = 2.5) %>%
+    flextable::set_header_labels(O_upperN= "O_upper", R_upperN= "R_upper", change.uci = "Change.uci", result_O_upper_category = "Reproduce.upper") %>%
+    flextable::add_footer_lines("O_upper = original upper confidence interval; R_upper = reproduced upper confidence interval; change.uci = change in R_upper - O_upper; Reproduce.upper = upper confidence interval reproduced.")
+  
+  assign_df(paste0("CU_model_", model_num), CU)
+}
+
+
+# Function to create and assign the CL table
+create_se_table <- function(fdat, model_num) {
+  SE <- fdat %>%
+    dplyr::select(term, O_seN, R_seN, change.se, result_O_se_category) %>%
+    mutate(across(c(R_seN, change.se), ~ Sround(.x, thresround))) %>% 
+    mutate(change.se = ifelse(change.se=="NA", "", change.se)) %>% 
+    mutate(R_seN = ifelse(R_seN=="NA", "", R_seN)) %>% 
+    flextable::flextable() %>%
+    flextable::align(align = "left", part = "all") %>%
+    flextable::width(j = "result_O_se_category", width = 2.5) %>%
+    flextable::set_header_labels(O_seN= "O_SE", R_seN= "R_SE",  change.se = "Change.SE", result_O_se_category = "Reproduce.SE") %>%
+    flextable::add_footer_lines("O_SE = original standard error; R_SE = reproduced standard error; Change.SE = change in R_SE - O_SE; Reproduce.lower = standard error reproduced.")
+  
+  assign_df(paste0("SE_model_", model_num), SE)
+}
+
+# Function to create and assign the CL table
+create_t_table <- function(fdat, model_num) {
+  t <- fdat %>%
+    dplyr::select(term, O_tN, R_tN, change.t, result_O_t_category) %>%
+    mutate(across(c(R_tN, change.t), ~ Sround(.x, thresround))) %>% 
+    mutate(change.t = ifelse(change.t =="NA", "", change.t)) %>% 
+    mutate(R_tN = ifelse(R_tN=="NA", "", R_tN)) %>% 
+    flextable::flextable() %>%
+    flextable::align(align = "left", part = "all") %>%
+    flextable::width(j = "result_O_t_category", width = 2.5) %>%
+    flextable::set_header_labels(O_tN= "O_t", R_tN= "R_t",  change.t = "Change.t", result_O_t_category = "Reproduce.t") %>%
+    flextable::add_footer_lines("O_t = original t value; R_t = reproduced t value; Change.t = change in R_t - O_t; Reproduce.lower = t value reproduced.")
+  
+  assign_df(paste0("t_model_", model_num), t)
+}
+
+
+# Function to create and assign the FF table
+create_r2_table <- function(fdat, model_num) {
+  R2 <- fdat %>%
+    dplyr::filter(n == 1) %>%
+    dplyr::select(O_r2N, R_r2N, changeR2, result_O_r2_category) %>%
+    mutate(across(c(R_r2N, changeR2), ~ Sround(.x, thresround))) %>% 
+    mutate(O_r2N = ifelse(O_r2N =="NA", "", O_r2N)) %>% 
+      mutate(changeR2 = ifelse(changeR2=="NA", "", changeR2)) %>% 
+    flextable::flextable() %>%
+    compose(i = 1, j = "O_r2N", part = "header", value = as_paragraph("O_R", as_sup("2"))) %>%
+    compose(i = 1, j = "R_r2N", part = "header", value = as_paragraph("R_R", as_sup("2"))) %>%
+    compose(i = 1, j = "changeR2", part = "header", value = as_paragraph("Change.R", as_sup("2"))) %>%
+    compose(i = 1, j = "result_O_r2_category", part = "header", value = as_paragraph("Reproduce.R", as_sup("2"))) %>%
+    flextable::align(align = "left", part = "all") %>%
+    flextable::width(j = "result_O_r2_category", width = 2.5) %>%
+    flextable::  colformat_double(digits = 3) %>%
+    flextable::add_footer_lines(
+  as_paragraph(
+    "O_R", as_sup("2"), " = original R", as_sup("2"), 
+    "; R_R", as_sup("2"), " = reproduced R", as_sup("2"), 
+    "; Change.R", as_sup("2"), " = change in R_R", as_sup("2"), " - O_R", as_sup("2")
+  )
+)
+  
+  assign_df(paste0("R2_model_", model_num),  R2)
+}
+
+
+# Function to create and assign the FF table
+create_r2Adj_table <- function(fdat, model_num) {
+  R2Adj <- fdat %>%
+    dplyr::filter(n == 1) %>%
+    dplyr::select(O_r2AdjN, R_r2AdjN, changeR2Adj, result_O_r2Adj_category) %>%
+    mutate(across(c(R_r2AdjN, changeR2Adj), ~ Sround(.x, thresround))) %>% 
+    mutate(O_r2AdjN = ifelse(O_r2AdjN =="NA", "", O_r2AdjN)) %>% 
+      mutate(changeR2Adj = ifelse(changeR2Adj=="NA", "", changeR2Adj)) %>% 
+    flextable::flextable() %>%
+    compose(i = 1, j = "O_r2AdjN", part = "header", value = as_paragraph("O_R", as_sup("2"), "Adj")) %>%
+    compose(i = 1, j = "R_r2AdjN", part = "header", value = as_paragraph("R_R", as_sup("2"), "Adj")) %>%
+    compose(i = 1, j = "changeR2Adj", part = "header", value = as_paragraph("Change.R", as_sup("2"), "Adj")) %>%
+    compose(i = 1, j = "result_O_r2Adj_category", part = "header", value = as_paragraph("Reproduce.R", as_sup("2"), "Adj")) %>%
+    flextable::align(align = "left", part = "all") %>%
+    flextable::width(j = "result_O_r2Adj_category", width = 2.5) %>%
+    flextable::  colformat_double(digits = 3) %>%
+    flextable::add_footer_lines(
+        as_paragraph(
+            "O_R", as_sup("2"), "Adj = original R", as_sup("2"), " Adjusted", 
+            "; R_R", as_sup("2"), "Adj = reproduced R", as_sup("2"), " Adjusted", 
+            "; Change.R", as_sup("2"), "Adj = change in R", as_sup("2"), "Adj (R", as_sup("2"), "Adj  - O_R", as_sup("2"), "Adj)",
+            "; Reproduce.R", as_sup("2"), "Adj = R", as_sup("2"), " Adjusted reproduced."
+        )
+    )
+  assign_df(paste0("R2Adj_model_", model_num),  R2Adj)
+}
+
+# Function to create and assign the DF table
+create_df_table <- function(fdat, model_num) {
+  DF <- fdat %>%
+    dplyr::filter(n == 1) %>%
+    dplyr::select(O_df1, R_df1, Change.df1, Reproduce.df1, O_df2, R_df2, Change.df2, Reproduce.df2) %>%
+    flextable::flextable() %>%
+    flextable::align(align = "left", part = "all") %>%
+    flextable::set_header_labels(O_df1 = "O_DF1", R_df1 = "R_DF1", Change.df1 = "Change.DF1", Reproduce.df1 = "Reproduce.DF1", O_df2 = "O_DF2", R_df2 = "R_DF2", Change.df2 = "Change.DF2", Reproduce.df2 = "Reproduce.DF2") %>%
+    flextable::add_footer_lines("O_DF1 = original degrees of freedom for the model; R_DF1 = reproduced degrees of freedom for the model; Change.DF1 = change in R_DF1 - O_DF1; Reproduce.DF1 = reproduced degrees of freedom for the model (R_DF1 = O_DF1); O_DF2 = original degrees of freedom for the residuals; R_DF2 = reproduced degrees of freedom for the residuals; Change.DF2 = change in R_DF2 - O_DF2; Reproduce.DF2 = reproduced degrees of freedom for the residuals (R_DF2 = O_DF2).")
+  
+  assign_df(paste0("DF_model_", model_num), DF)
+}
+
+create_cp_table <- function(fdat, model_num) {
+  Cp <- fdat %>%
+    dplyr::select(term, O_p.value, R_p.valueN, changep, result_O_p.value_category, SigChangeDirection) %>%
+    mutate(changep = Sround(changep, 4)) %>%
+    mutate(R_p.valueN = sapply(R_p.valueN, round_p)) %>%
+    mutate(O_p.value = ifelse(O_p.value == "NA", "", O_p.value)) %>%
+    mutate(changep = ifelse(changep == "NA", "", changep)) %>%
+    flextable::flextable() %>%
+    flextable::align(align = "left", part = "all") %>%
+    flextable::width(j = "SigChangeDirection", width = 3) %>%
+    flextable::set_header_labels(term = "Term",  O_p.value = "O_p", R_p.valueN="R_p", changep = "Change.p", result_O_p.value_category = "Reproduce.p") %>%
+    flextable::add_footer_lines("O_p = original p-value; R_p = reproduced p-value; Changep = change in p-value R_p - O_p; Reproduce.p = p-values reproduced. SigChangeDirection = statistical significance and B change between original and reproduced models. Note, p-values that were <0.05 were set to 0.049 for the purposes of comparison.") %>%
+    flextable::  colformat_double(digits = 3)
+  
+  assign_df(paste0("Cp_model_", model_num), Cp)
+}
+
+
+ #Function to create and assign the FF table
+create_ff_table <- function(fdat, model_num) {
+  FF <- fdat %>%
+    dplyr::filter(n == 1) %>%
+    dplyr::select(term, O_f, R_fN, Change.f, result_O_f_category) %>%
+    mutate(across(c(R_fN, Change.f), ~ Sround(.x, thresround))) %>% 
+    mutate(Change.f = ifelse(Change.f=="NA", "", Change.f)) %>% 
+    mutate(R_fN = ifelse(R_fN =="NA", "", R_fN)) %>% 
+    flextable::flextable() %>%
+    flextable::align(align = "left", part = "all") %>%
+    flextable::width(j = "result_O_f_category", width = 2.5) %>%
+    flextable::set_header_labels(
+      term = "Term",
+      O_f = "O_F",
+      R_fN = "R_F",
+      Change.f = "Change.F",
+      result_O_f_category = "Reproduce.F"
+    ) %>%
+    flextable::add_footer_lines("O_F = original global F; R_F = reproduced global F; Change.F = change in R_F - O_F; Reproduce.F = Global F reproduced.")
+  
+  assign_df(paste0("FF_model_", model_num), FF)
+}
+
+
+
+
+# Generate model outputs
+generate_model_outputs <- function(model_num) {
+  generate_forest_plot(model_num)
+  fdat <- get_dynamic_df(paste0("fdat", model_num))
+  generate_bland_altman_plot(fdat, model_num)
+  create_cc_table(fdat, model_num)
+  create_cl_table(fdat, model_num)
+  create_cu_table(fdat, model_num)
+  create_se_table(fdat, model_num)
+  create_t_table(fdat, model_num)
+  create_r2_table(fdat, model_num)
+  create_r2Adj_table(fdat, model_num)
+  create_ff_table(fdat, model_num)
+  create_df_table(fdat, model_num)
+  create_cp_table(fdat, model_num)
+}
+
+# Example list of model numbers (you can define this based on your actual models)
+model_numbers <- 1:num_models
+
+# Call the function for each model
+for (i in model_numbers) {
+  generate_model_outputs(i)
+}
+
+
+```
+
+# Model 1
+
+::: panel-tabset
+### Original results
+
+##### Model results for `r namey1`
+
+```{r, ft.align="left"}
+O_coefficients_flextable_1
+```
+
+##### Fit statistics for `r namey1`
+
+```{r, ft.align="left"}
+O_fit_stats_flextable_1
+```
+
+##### ANOVA table for `r namey1`
+
+```{r, ft.align="left"}
+O_anova_flextable_1
+```
+
+### Reproduced results
+
+##### Model results for `r namey1`
+
+```{r, ft.align="left"}
+R_coefficients_flextable_1
+```
+
+##### Fit statistics for `r namey1`
+
+```{r, ft.align="left"}
+R_fit_stats_flextable_1
+```
+
+##### ANOVA table for `r namey1`
+
+```{r, ft.align="left"}
+R_anova_flextable_1
+
+```
+
+##### Visualisation of regression model
+
+The blue line shows the best line of fit with shading representing 95% confidence intervals, while holding all other covariates constant. The dots show partial residuals, which reflect the observed data adjusted for all other predictors except the one being plotted.
+
+```{r, out.width = "80%", out.height="80%"}
+knitr::include_graphics('figures/reg_plot_1.png') 
+```
+
+### Differences
+
+##### Forest plot showing Original and Reproduced coefficients and 95% confidence intervals for `r namey1`
+
+```{r}
+knitr::include_graphics('figures/forest_plot_model_1.png')
+
+```
+
+##### Change in regression coefficients
+
+```{r, ft.align="left"}
+
+CC_model_1
+```
+
+##### Change in lower 95% confidence intervals for coefficients
+
+```{r, ft.align="left"}
+
+
+CL_model_1
+```
+
+##### Change in upper 95% confidence intervals for coefficients
+
+```{r, ft.align="left"}
+
+CU_model_1
+```
+
+##### Change in p-values
+
+```{r, ft.align="left"}
+Cp_model_1
+```
+
+##### Results for p-values
+
+-   The p-value for this model was not reproduced.
+
+##### Conclusion computational reproducibility
+
+`r NotCompRep`
+
+### Sensitivity analysis
+
+As this model was not computationally reproducible, inferential reproducibility was not considered, since the original analyses could not be reproduced and therefore, statistical assumptions could not be meaningfully compared or interpreted.
+:::
+
+# Model 2
+
+::: panel-tabset
+#### Original results
+
+##### Model results for `r namey2`
+
+```{r, ft.align="left"}
+O_coefficients_flextable_2
+
+```
+
+##### Fit statistics for `r namey2`
+
+```{r, ft.align="left"}
+O_fit_stats_flextable_2
+
+```
+
+##### ANOVA table for `r namey2`
+
+```{r,ft.align="left"}
+O_anova_flextable_2
+```
+
+#### Reproduced results
+
+##### Model results `r namey2`
+
+```{r , ft.align="left"}
+
+R_coefficients_flextable_2
+```
+
+##### Model fit for `r namey2`
+
+```{r, ft.align="left"}
+R_fit_stats_flextable_2
+```
+
+##### ANOVA table for `r namey2`
+
+```{r, ft.align="left"}
+
+R_anova_flextable_2
+```
+
+##### Visualisation of regression model
+
+The blue line shows the best line of fit with shading representing 95% confidence intervals, while holding all other covariates constant. The dots show partial residuals, which reflect the observed data adjusted for all other predictors except the one being plotted.
+
+```{r, out.width = "80%", out.height="80%"}
+knitr::include_graphics('figures/reg_plot_2.png') 
+
+```
+
+#### Differences
+
+##### Forest plot showing Original and Reproduced coefficients and 95% confidence intervals for `r namey2`
+
+```{r}
+knitr::include_graphics('figures/forest_plot_model_2.png')
+
+```
+
+##### Change in regression coefficients
+
+```{r, ft.align="left"}
+CC_model_2
+```
+
+##### Change in lower 95% confidence intervals for coefficients
+
+```{r, ft.align="left"}
+CL_model_2
+
+```
+
+##### Change in upper 95% confidence intervals for coefficients
+
+```{r, ft.align="left"}
+
+CU_model_2
+
+```
+
+##### Change in Standard error
+
+```{r, ft.align="left"}
+
+SE_model_2
+```
+
+##### Change in p-values
+
+```{r, ft.align="left"}
+Cp_model_2
+```
+
+##### Bland Altman Plot showing differences between Original and Reproduced p-values for `r namey2`
+
+```{r}
+knitr::include_graphics('figures/bland_altman_plot_model_2.png')
+
+```
+
+##### Results for p-values
+
+-   The p-values for this model were not reproduced.
+
+##### Conclusion computational reproducibility
+
+`r NotCompRep`
+
+#### Sensitivity analysis
+
+As this model was not computationally reproducible, inferential reproducibility was not considered, since the original analyses could not be reproduced and therefore, statistical assumptions could not be meaningfully compared or interpreted.
+:::
+
+```{r}
+
+write.csv(fdat,file="data/model_data15.csv")
+```
